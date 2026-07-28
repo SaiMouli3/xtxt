@@ -39,3 +39,47 @@ jobs:
           node-version: "22"
       - run: node --test
         working-directory: sdk/js
+
+  # Build the distributables and prove they actually contain the code. An
+  # earlier wheel shipped empty because hatchling read the repo's .gitignore
+  # relative to sdk/python and excluded the package; the tests all passed,
+  # because they import from the source tree rather than the artifact.
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build and install the Python wheel
+        run: |
+          pip install build
+          python -m build
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install dist/*.whl
+        working-directory: sdk/python
+      - name: The installed wheel must work outside its source tree
+        run: |
+          cd /tmp
+          /tmp/venv/bin/python -c "
+          import xtxt
+          res = xtxt.parse('# T\n\n@task\nTitle: Ship it\nStatus: Done\n@endtask\n')
+          assert [n.kind for n in res.doc.nodes] == ['heading', 'block'], res.doc.nodes
+          tasks = xtxt.extract(res.doc)['tasks']
+          assert tasks and tasks[0]['done'], tasks
+          assert '<section class=\"record\"' in xtxt.render_html(res.doc)
+          print('python package ok', xtxt.__version__)
+          "
+
+      - name: The npm tarball must contain every published entry point
+        run: |
+          npm pack
+          tar tzf xtxt-js-*.tgz
+          for f in package/xtxt.js package/chart.js package/README.md package/LICENSE; do
+            tar tzf xtxt-js-*.tgz | grep -qx "$f" || { echo "missing $f"; exit 1; }
+          done
+        working-directory: sdk/js

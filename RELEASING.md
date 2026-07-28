@@ -21,7 +21,13 @@ scripted from here.
    Then create the `pypi` environment under repo Settings → Environments.
 
 2. **npm token.** `npm token create --read-only=false`, then add it as the
-   repository secret `NPM_TOKEN` (Settings → Secrets → Actions).
+   repository secret `NPM_TOKEN` (Settings → Secrets → Actions). Until that
+   secret exists the npm job skips itself rather than failing the release.
+
+   The npm package is **`xtxt-js`**, not `xtxt`: the bare name is held by an
+   abandoned v0.0.0 placeholder published in 2022. PyPI and the Go module use
+   plain `xtxt`. If npm ever releases the name, that is a rename, not a
+   silent retag.
 
 Go needs nothing: the module proxy picks up tags automatically.
 

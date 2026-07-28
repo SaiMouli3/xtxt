@@ -9,7 +9,7 @@ that lands on an uninstallable repo converts nobody.
 ## Pre-flight
 
 - [ ] `pip install xtxt` works
-- [ ] `npm install xtxt` works
+- [ ] `npm install xtxt-js` works
 - [ ] `go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest` works
 - [ ] <https://saimouli3.github.io/xtxt/> loads and the demo renders
 - [ ] README badges are all green, no 404s

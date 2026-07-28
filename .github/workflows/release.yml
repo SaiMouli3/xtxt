@@ -42,13 +42,23 @@ jobs:
   npm:
     needs: test
     runs-on: ubuntu-latest
+    # Skipped until NPM_TOKEN exists, so a release is never red for a reason
+    # that has nothing to do with the code. See RELEASING.md.
+    if: ${{ github.repository == 'SaiMouli3/xtxt' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: token
+        run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.token.outputs.present != 'true'
+        run: echo "::notice::NPM_TOKEN is not set; skipping the npm publish."
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           registry-url: https://registry.npmjs.org
-      - run: npm publish --provenance --access public
+      - if: steps.token.outputs.present == 'true'
+        run: npm publish --provenance --access public
         working-directory: sdk/js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

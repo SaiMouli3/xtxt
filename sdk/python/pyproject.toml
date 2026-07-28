@@ -21,5 +21,15 @@ classifiers = [
 Homepage = "https://github.com/SaiMouli3/xtxt"
 Specification = "https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md"
 
+[tool.hatch.build]
+# Do not consult .gitignore. The repo root ignores `/xtxt` (the built CLI
+# binary), and hatchling applies that pattern relative to this directory —
+# which silently excluded the package source and produced an empty wheel.
+ignore-vcs = true
+exclude = ["test_conformance.py", "dist", "*.pyc", "__pycache__"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["xtxt"]
+
+[tool.hatch.build.targets.sdist]
+include = ["xtxt", "README.md", "LICENSE", "pyproject.toml"]

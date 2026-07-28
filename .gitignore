@@ -8,3 +8,5 @@ __pycache__/
 .pytest_cache/
 node_modules/
 *.egg-info/
+sdk/python/dist/
+sdk/js/*.tgz

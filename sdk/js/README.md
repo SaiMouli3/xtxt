@@ -1,11 +1,11 @@
-# xtxt (JavaScript)
+# xtxt-js
 
 Parser, validator, extractor and HTML renderer for the
 [XTXT](https://github.com/SaiMouli3/xtxt) plain-text document format.
 Dependency-free ESM, runs in Node and the browser.
 
 ```js
-import { parse, validate, extract, renderHTML } from 'xtxt';
+import { parse, validate, extract, renderHTML } from 'xtxt-js';
 
 const { doc, issues } = parse(source);
 for (const i of validate(doc)) console.log(i.line, i.severity, i.message);

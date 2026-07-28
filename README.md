@@ -3,7 +3,7 @@
 [![ci](https://github.com/SaiMouli3/xtxt/actions/workflows/ci.yml/badge.svg)](https://github.com/SaiMouli3/xtxt/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/SaiMouli3/xtxt.svg)](https://pkg.go.dev/github.com/SaiMouli3/xtxt)
 [![PyPI](https://img.shields.io/pypi/v/xtxt?label=pypi)](https://pypi.org/project/xtxt/)
-[![npm](https://img.shields.io/npm/v/xtxt?label=npm)](https://www.npmjs.com/package/xtxt)
+[![npm](https://img.shields.io/npm/v/xtxt-js?label=npm)](https://www.npmjs.com/package/xtxt-js)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Plain text that machines can read — without guessing.**
@@ -159,8 +159,8 @@ spec, shows every paragraph, and shows a placeholder where the new thing was.
 | Language | Location | Install |
 |---|---|---|
 | Go | this module | `go get github.com/SaiMouli3/xtxt` |
-| Python | `sdk/python` | `pip install ./sdk/python` |
-| JavaScript | `sdk/js` | `npm install ./sdk/js` |
+| Python | `sdk/python` | `pip install xtxt` |
+| JavaScript | `sdk/js` | `npm install xtxt-js` |
 
 ```python
 import xtxt
@@ -170,7 +170,7 @@ for t in xtxt.extract(res.doc)["tasks"]:
 ```
 
 ```js
-import { parse, extract } from 'xtxt';
+import { parse, extract } from 'xtxt-js';
 const { doc } = parse(await readFile('notes.xtxt', 'utf8'));
 console.log(extract(doc).outline);
 ```
