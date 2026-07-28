@@ -1,0 +1,26 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [],
+        "items": [],
+        "kind": "paragraph",
+        "level": 0,
+        "line": 1,
+        "name": "",
+        "text": "Good paragraph."
+      }
+    ],
+    "version": ""
+  },
+  "issues": [
+    {
+      "line": 3,
+      "severity": "error"
+    },
+    {
+      "line": 5,
+      "severity": "error"
+    }
+  ]
+}

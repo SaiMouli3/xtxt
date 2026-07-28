@@ -3,6 +3,7 @@ package xtxt
 import (
 	"fmt"
 	"html"
+	"strconv"
 	"strings"
 )
 
@@ -16,12 +17,15 @@ type HTMLOptions struct {
 	// Mermaid includes the mermaid.js loader from a CDN when the document has
 	// diagrams. Off by default so output stays self-contained and offline.
 	Mermaid bool
+	// Plugins render directives the core does not know about. Anything still
+	// unknown after this falls back to a visible placeholder.
+	Plugins Plugins
 }
 
 // RenderHTML renders a document to HTML.
 func RenderHTML(doc *Document, opt HTMLOptions) string {
 	var b strings.Builder
-	body := renderBody(doc)
+	body := renderBody(doc, opt)
 	if !opt.Full {
 		return body
 	}
@@ -62,8 +66,9 @@ func hasDirective(doc *Document, name string) bool {
 	return false
 }
 
-func renderBody(doc *Document) string {
+func renderBody(doc *Document, opt HTMLOptions) string {
 	var b strings.Builder
+	var notes []Node
 	for _, n := range doc.Nodes {
 		switch n.Kind {
 		case KindHeading:
@@ -75,9 +80,41 @@ func renderBody(doc *Document) string {
 		case KindList:
 			b.WriteString(renderList(n))
 		case KindDirective, KindBlock:
+			if n.Name == "footnote" {
+				notes = append(notes, n)
+				continue
+			}
+			if out, ok := opt.Plugins.render(n); ok {
+				b.WriteString(out + "\n")
+				continue
+			}
 			b.WriteString(renderDirectiveHTML(n))
 		}
 	}
+	b.WriteString(renderFootnotes(notes))
+	return b.String()
+}
+
+func renderFootnotes(notes []Node) string {
+	if len(notes) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("<section class=\"footnotes\">\n<ol>\n")
+	for i, n := range notes {
+		id := n.Args.Resolve("id")
+		if id == "" {
+			id = itoa(i + 1)
+		}
+		e := html.EscapeString(id)
+		value := ""
+		if _, err := strconv.Atoi(id); err == nil {
+			value = ` value="` + e + `"`
+		}
+		fmt.Fprintf(&b, "<li id=\"fn-%s\"%s>%s <a class=\"fnback\" href=\"#fnref-%s\">&#8617;</a></li>\n",
+			e, value, InlineHTML(n.Text), e)
+	}
+	b.WriteString("</ol>\n</section>\n")
 	return b.String()
 }
 
@@ -158,11 +195,51 @@ func renderDirectiveHTML(n Node) string {
 		return fmt.Sprintf("<pre>%s</pre>\n", esc(n.Text))
 	case "table":
 		return renderTableHTML(n)
+	case "chart":
+		c := ParseChart(n)
+		svg := RenderChartSVG(c)
+		if svg == "" {
+			return ""
+		}
+		out := "<figure class=\"chart\">" + svg
+		if c.Title != "" {
+			out += "<figcaption>" + InlineHTML(c.Title) + "</figcaption>"
+		}
+		// The table view is mandatory, not a nicety: part of the palette sits
+		// below 3:1 against the light surface, and print or forced-colors modes
+		// may drop the fills entirely.
+		return out + chartTableHTML(c) + "</figure>\n"
 	default:
+		if n.Kind == KindBlock {
+			if f := n.Fields(); len(f) > 0 {
+				return renderRecordHTML(n, f)
+			}
+		}
 		// Unknown directive: show it rather than dropping it (SPEC §7).
 		return fmt.Sprintf("<div class=\"unknown\" data-directive=\"%s\">%s</div>\n",
 			esc(n.Name), esc(sourceOf(n)))
 	}
+}
+
+// renderRecordHTML renders any record-shaped block — @task, @decision,
+// @knowledge, @ai, @prompt, @chat and whatever a later version adds — as a
+// labelled card. The core does not need to know the directive's meaning to show
+// its structure faithfully, which is what keeps §7 honest for semantic blocks.
+func renderRecordHTML(n Node, f Fields) string {
+	esc := html.EscapeString
+	var b strings.Builder
+	fmt.Fprintf(&b, "<section class=\"record\" data-type=\"%s\">\n", esc(n.Name))
+	fmt.Fprintf(&b, "<h4 class=\"record-type\">%s</h4>\n", esc(n.Name))
+	b.WriteString("<dl>\n")
+	for _, e := range f {
+		key := e.Key
+		if key == "" {
+			key = "—"
+		}
+		fmt.Fprintf(&b, "<dt>%s</dt><dd>%s</dd>\n", esc(key), InlineHTML(e.Value))
+	}
+	b.WriteString("</dl>\n</section>\n")
+	return b.String()
 }
 
 func altText(n Node) string {
@@ -276,4 +353,34 @@ hr { border:0; border-top:1px solid var(--rule); margin:3em 0; }
 .math { margin:1.6em 0; text-align:center; font-family:ui-serif,Georgia,serif; font-size:1.15rem; font-style:italic; }
 .unknown { border:1px dashed var(--rule); border-radius:6px; padding:.8em 1em; margin:1.5em 0; color:var(--muted); white-space:pre-wrap; font-family:ui-monospace,monospace; font-size:.8rem; }
 .attachment a::before { content:"\1F4CE\00a0"; }
+
+/* Charts. Categorical slots 1-3 of a palette validated for CVD and
+   normal-vision separation on both surfaces; dark steps are selected for the
+   dark surface, not flipped from the light ones. */
+:root { --chart-1:#2a78d6; --chart-2:#eb6834; --chart-3:#1baf7a; --chart-surface:#fff; --chart-grid:#e3e3e3; }
+@media (prefers-color-scheme: dark) { :root { --chart-1:#3987e5; --chart-2:#d95926; --chart-3:#199e70; --chart-surface:#151515; --chart-grid:#333; } }
+figure.chart { margin:2em 0; text-align:left; }
+.xtxt-chart { display:block; max-width:100%; overflow:visible; font-family:ui-sans-serif,system-ui,sans-serif; }
+.xtxt-chart .c-label { font-size:12px; fill:var(--fg); }
+.xtxt-chart .c-value { font-size:11px; fill:var(--muted); }
+.xtxt-chart .c-inbar { font-size:11px; fill:#fff; font-weight:600; }
+.xtxt-chart .c-axis  { font-size:10px; fill:var(--muted); }
+.xtxt-chart .c-grid  { stroke:var(--chart-grid); stroke-width:1; }
+.chart-data { margin-top:.5em; font-size:.85rem; }
+.chart-data summary { cursor:pointer; color:var(--muted); font-family:ui-sans-serif,system-ui,sans-serif; }
+.chart-data table { margin:.6em 0 0; }
+@media (forced-colors: active) { .xtxt-chart path, .xtxt-chart rect, .xtxt-chart polyline { forced-color-adjust:none; } }
+
+/* Record blocks: @task, @decision, @knowledge, @ai, @chat and friends. */
+.record { border:1px solid var(--rule); border-left:3px solid var(--accent); border-radius:6px; padding:.9em 1.1em; margin:1.8em 0; }
+.record-type { font-family:ui-sans-serif,system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin:0 0 .6em; font-weight:600; }
+.record dl { display:grid; grid-template-columns:minmax(4.5rem,max-content) 1fr; gap:.35em .9em; margin:0; font-size:.94rem; }
+.record dt { font-family:ui-sans-serif,system-ui,sans-serif; font-size:.8rem; color:var(--muted); padding-top:.15em; }
+.record dd { margin:0; white-space:pre-wrap; }
+
+/* Footnotes. */
+.fnref a { text-decoration:none; padding:0 .1em; }
+.footnotes { margin-top:3em; padding-top:1.2em; border-top:1px solid var(--rule); font-size:.88rem; color:var(--muted); }
+.footnotes li { margin-bottom:.4em; }
+.fnback { text-decoration:none; }
 `

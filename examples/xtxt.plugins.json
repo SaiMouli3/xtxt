@@ -1,0 +1,14 @@
+[
+  {
+    "name": "youtube",
+    "html": "<figure class=\"embed\"><iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/{{.Args.id}}\" title=\"{{.Args.title}}\" frameborder=\"0\" allowfullscreen></iframe><figcaption>{{.Args.title}}</figcaption></figure>"
+  },
+  {
+    "name": "github",
+    "html": "<p class=\"embed-link\"><a href=\"https://github.com/{{.Args.repo}}\">{{.Args.repo}} on GitHub</a></p>"
+  },
+  {
+    "name": "spotify",
+    "html": "<iframe style=\"border-radius:12px\" src=\"https://open.spotify.com/embed/track/{{.Args.track}}\" width=\"100%\" height=\"152\" frameborder=\"0\" loading=\"lazy\"></iframe>"
+  }
+]

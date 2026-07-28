@@ -1,0 +1,7 @@
+@futurething(a=1, "positional")
+
+@newblock(x="y")
+payload survives
+@endnewblock
+
+Ordinary text after.

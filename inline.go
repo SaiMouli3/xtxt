@@ -14,7 +14,7 @@ func InlineHTML(s string) string {
 		switch {
 		case c == '\\' && i+1 < len(s):
 			i++
-			b.WriteString(html.EscapeString(string(s[i])))
+			escapeByte(&b, s[i])
 		case c == '`':
 			if end := strings.IndexByte(s[i+1:], '`'); end >= 0 {
 				b.WriteString("<code>" + html.EscapeString(s[i+1:i+1+end]) + "</code>")
@@ -34,6 +34,12 @@ func InlineHTML(s string) string {
 			}
 			b.WriteString("*")
 		case c == '[':
+			if id, end, ok := footnoteRef(s, i); ok {
+				e := html.EscapeString(id)
+				b.WriteString(`<sup class="fnref" id="fnref-` + e + `"><a href="#fn-` + e + `">` + e + `</a></sup>`)
+				i = end
+				continue
+			}
 			if label, target, end, ok := link(s, i); ok {
 				b.WriteString(`<a href="` + html.EscapeString(target) + `">` + InlineHTML(label) + `</a>`)
 				i = end
@@ -41,10 +47,33 @@ func InlineHTML(s string) string {
 			}
 			b.WriteString("[")
 		default:
-			b.WriteString(html.EscapeString(string(c)))
+			escapeByte(&b, c)
 		}
 	}
 	return b.String()
+}
+
+// escapeByte writes one byte, escaping the five characters that matter in HTML.
+// It must work a byte at a time rather than converting to a rune, because the
+// scan is byte-oriented: `string(byte)` on a UTF-8 continuation byte produces a
+// different character entirely, which silently mangles every non-ASCII
+// document. Bytes above ASCII are passed through untouched, so valid UTF-8 in
+// gives valid UTF-8 out.
+func escapeByte(b *strings.Builder, c byte) {
+	switch c {
+	case '&':
+		b.WriteString("&amp;")
+	case '<':
+		b.WriteString("&lt;")
+	case '>':
+		b.WriteString("&gt;")
+	case '"':
+		b.WriteString("&#34;")
+	case '\'':
+		b.WriteString("&#39;")
+	default:
+		b.WriteByte(c)
+	}
 }
 
 // InlineText strips inline markup, for plain-text and terminal output.
@@ -74,6 +103,11 @@ func InlineText(s string) string {
 			}
 			b.WriteByte(c)
 		case c == '[':
+			if id, end, ok := footnoteRef(s, i); ok {
+				b.WriteString("[" + id + "]")
+				i = end
+				continue
+			}
 			if label, _, end, ok := link(s, i); ok {
 				b.WriteString(InlineText(label))
 				i = end
@@ -102,6 +136,23 @@ func findClose(s string, from int, mark string) int {
 		}
 	}
 	return -1
+}
+
+// footnoteRef parses a marker [^id] starting at s[i] == '['. The body lives in
+// an @footnote(id="…") block elsewhere in the document.
+func footnoteRef(s string, i int) (id string, end int, ok bool) {
+	if i+2 >= len(s) || s[i+1] != '^' {
+		return "", 0, false
+	}
+	close := strings.IndexByte(s[i+2:], ']')
+	if close <= 0 {
+		return "", 0, false
+	}
+	id = s[i+2 : i+2+close]
+	if strings.ContainsAny(id, " \t") {
+		return "", 0, false
+	}
+	return id, i + 2 + close, true
 }
 
 // link parses [label](target) starting at s[i] == '['.

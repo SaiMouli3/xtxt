@@ -3,6 +3,7 @@ package xtxt
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func parse(t *testing.T, src string) *Document {
@@ -316,5 +317,31 @@ func TestLineNumbers(t *testing.T) {
 		if doc.Nodes[i].Line != want {
 			t.Errorf("node %d line = %d, want %d", i, doc.Nodes[i].Line, want)
 		}
+	}
+}
+
+func TestInlineHTMLPreservesUTF8(t *testing.T) {
+	// The scan is byte-oriented; converting a byte to a rune would corrupt
+	// every multi-byte character in the document.
+	cases := []string{
+		"an em dash — here",
+		"日本語のテキスト",
+		"café naïve",
+		"**émphase** and `código`",
+		"emoji 🎉 survives",
+	}
+	for _, in := range cases {
+		got := InlineHTML(in)
+		if !utf8.ValidString(got) {
+			t.Errorf("InlineHTML(%q) produced invalid UTF-8: %q", in, got)
+		}
+		for _, r := range in {
+			if r > 127 && !strings.ContainsRune(got, r) {
+				t.Errorf("InlineHTML(%q) lost %q: got %q", in, r, got)
+			}
+		}
+	}
+	if got := InlineHTML("a — b & c"); got != "a — b &amp; c" {
+		t.Errorf("got %q", got)
 	}
 }

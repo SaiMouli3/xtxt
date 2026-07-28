@@ -82,9 +82,53 @@ func directiveMarkdown(n Node) string {
 		return fence(n.Args.Resolve("language"), n.Text)
 	case "math":
 		return "$$\n" + n.Text + "\n$$\n\n"
+	case "footnote":
+		return fmt.Sprintf("[^%s]: %s\n\n", n.Args.Resolve("id"), n.Text)
+	case "chart":
+		// Markdown has no chart. A table keeps the data readable and lossless.
+		c := ParseChart(n)
+		var b strings.Builder
+		if c.Title != "" {
+			b.WriteString("**" + c.Title + "**\n\n")
+		}
+		b.WriteString("| | " + joinSeriesNames(c) + " |\n|---|" + strings.Repeat("--:|", len(c.Series)) + "\n")
+		for i, label := range c.Labels {
+			b.WriteString("| " + label + " |")
+			for _, s := range c.Series {
+				b.WriteString(" " + formatNumber(s.Values[i], c.Unit) + " |")
+			}
+			b.WriteString("\n")
+		}
+		return b.String() + "\n"
 	default:
+		if f := n.Fields(); len(f) > 0 {
+			var b strings.Builder
+			fmt.Fprintf(&b, "**%s**\n\n", n.Name)
+			for _, e := range f {
+				if e.Key == "" {
+					b.WriteString(e.Value + "\n\n")
+					continue
+				}
+				fmt.Fprintf(&b, "- **%s:** %s\n", e.Key, strings.ReplaceAll(e.Value, "\n", " "))
+			}
+			return b.String() + "\n"
+		}
 		return fence(n.Name, n.Text)
 	}
+}
+
+func joinSeriesNames(c Chart) string {
+	var names []string
+	for i, s := range c.Series {
+		if s.Name == "" {
+			s.Name = "Value"
+			if len(c.Series) > 1 {
+				s.Name = "Series " + itoa(i+1)
+			}
+		}
+		names = append(names, s.Name)
+	}
+	return strings.Join(names, " | ")
 }
 
 func fence(lang, body string) string {

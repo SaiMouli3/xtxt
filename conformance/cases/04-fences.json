@@ -1,0 +1,54 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "language",
+            "value": "python"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 1,
+        "name": "code",
+        "text": "print(\"hello\")"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 7,
+        "name": "code",
+        "text": "    indented\n\ttabbed"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 12,
+        "name": "math",
+        "text": "E = mc^2"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 16,
+        "name": "comment",
+        "text": "not rendered"
+      }
+    ],
+    "version": ""
+  },
+  "issues": [
+    {
+      "line": 7,
+      "severity": "warning"
+    }
+  ]
+}

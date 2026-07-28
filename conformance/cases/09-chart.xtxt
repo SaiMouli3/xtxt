@@ -1,0 +1,11 @@
+@chart(type="bar", title="Monthly")
+Jan 20
+Feb 35
+Mar 50
+@endchart
+
+@chart(type="line")
+Q | North | South
+1 | 10 | 12
+2 | 14 | 9
+@endchart

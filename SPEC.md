@@ -195,6 +195,16 @@ Readers MUST accept all of these. Unknown attributes are ignored, not errors.
 | `metadata` | fenced | — | — |
 | `comment` | fenced | — | — |
 | `raw` | fenced | `format` | `format` (e.g. `html`) |
+| `embed` | inline | `src` | `src` |
+| `footnote` | fenced | `id` | `id` |
+| `chart` | fenced | `type` | `type`, `title`, `unit` |
+| `task` | fenced | — | record (§5.4) |
+| `decision` | fenced | — | record (§5.4) |
+| `knowledge` | fenced | — | record (§5.4) |
+| `note` | fenced | — | record (§5.4) |
+| `ai` | fenced | — | record (§5.4) |
+| `prompt` | fenced | — | record (§5.4) |
+| `chat` | fenced | — | record (§5.4) |
 
 ### 5.1 `table` payload
 
@@ -223,6 +233,102 @@ properties rather than rendering it inline.
 Not rendered in any output. Retained by the parser so that tools can round-trip
 a document.
 
+### 5.4 Record payloads
+
+A **record** is a block payload read as an ordered list of `Key: value` (or
+`Key = value`) entries. It is how a document carries structure a machine can
+use without inferring it from prose:
+
+```
+@task
+Title: Build parser
+Status: In Progress
+Owner: Subbu
+Priority: High
+@endtask
+```
+
+Rules:
+
+- A line opens a field when it begins with a key followed by `:` or `=`. A key
+  starts with a letter or `_`, contains only letters, digits, spaces, `_`, `-`
+  and `.`, is at most **32 characters**, and is at most **3 words**. These caps
+  are deliberate: without them an ordinary sentence containing a colon would be
+  read as a field.
+- Lines following a field are appended to that field's value, so a value may
+  span paragraphs.
+- Lines before the first field are kept under the empty key, so nothing is lost.
+- **Order is significant.** A `@chat` block's turns are fields, and their
+  sequence is the conversation.
+- Field names carry no meaning at the format level. A reader renders and
+  extracts them faithfully; what `Priority: High` *means* is the application's
+  business, not the format's.
+
+Any block may be read as a record, including one the reader has never seen.
+That is what lets a new semantic block work in an old reader:
+
+```
+@experiment
+Hypothesis: caching helps
+Confidence: 0.7
+@endexperiment
+```
+
+### 5.5 `chart` payload
+
+Rows of `Label | value`, `Label: value` or `Label value`. A first row whose
+trailing cells are all non-numeric names the series.
+
+```
+@chart(type="bar", title="Monthly signups")
+Jan | 20
+Feb | 35
+@endchart
+```
+
+`type` is `bar` (default), `line`, `area`, or `stacked`. `pie` is accepted and
+renders as a proportion bar: lengths can be compared, angles cannot.
+
+A renderer MUST make the underlying numbers reachable as text — a table, a
+caption or direct labels — because colour alone is not an accessible encoding
+and print, forced-colours and colour-vision-deficient readers may not receive
+it at all.
+
+### 5.6 `include` and `embed`
+
+```
+@include(src="introduction.xtxt")
+@embed(src="api-reference.xtxt")
+```
+
+`@include` splices the referenced document's blocks in place. `@embed` does the
+same but demotes the referenced document's headings by one level, so it nests
+under the including section rather than competing with it.
+
+A resolver MUST:
+
+- refuse absolute paths and any path that escapes the including document's
+  directory,
+- refuse remote sources unless the host application opts in explicitly,
+- detect cycles and bound nesting depth.
+
+Rendering a document must never become a way to read arbitrary files.
+
+### 5.7 Footnotes
+
+A marker `[^id]` in prose refers to an `@footnote` block anywhere in the file:
+
+```
+Neural networks are universal approximators[^cybenko].
+
+@footnote(id="cybenko")
+Cybenko, G. (1989).
+@endfootnote
+```
+
+Markers and notes are matched by `id`. A marker with no note, or a note nobody
+cites, is a warning — never an error.
+
 ## 6. Escaping
 
 | Sequence | Yields |
@@ -243,6 +349,39 @@ a document.
 This is what makes an XTXT file forward compatible: a 1.0 reader opening a 1.4
 document still shows every paragraph, and shows the reader that something newer
 is present.
+
+### 7.1 Extensions
+
+Nothing in §4 or §5.4 is reserved to this specification. A new directive needs
+no registration to work:
+
+```
+@youtube(id="abc123")
+@spotify(track="…")
+@timeline
+2024-01: started
+2025-06: shipped
+@endtimeline
+```
+
+A conforming reader parses all three today: the first two as inline directives,
+the third as a fenced block whose payload is a record. What a reader does *not*
+know is how to draw them, and the answer is a **renderer**, not a parser change.
+
+An implementation MAY accept a declarative plugin manifest mapping a directive
+name to a rendering template. It MUST NOT let a document itself supply
+executable code: opening a document is not consent to run it.
+
+### 7.2 What XTXT deliberately does not do
+
+A format is defined as much by what it refuses. XTXT does not specify
+compression, encryption, embedded revision history, or a binary container.
+Each would trade away the property the format exists for — that the bytes on
+disk are the document, readable in any editor and diffable by any tool.
+
+These belong in a layer above: a `.xtxt` inside an encrypted volume, a
+signature alongside the file, history in the version control system that
+already does it well. The format's job is to be worth putting there.
 
 ## 8. Errors
 

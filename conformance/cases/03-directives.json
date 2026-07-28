@@ -1,0 +1,71 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "src",
+            "value": "cat.png"
+          },
+          {
+            "key": "caption",
+            "value": "A cat, sitting"
+          },
+          {
+            "key": "width",
+            "value": "400"
+          }
+        ],
+        "items": [],
+        "kind": "directive",
+        "level": 0,
+        "line": 3,
+        "name": "image",
+        "text": ""
+      },
+      {
+        "args": [
+          {
+            "key": "",
+            "value": "demo.mp4"
+          }
+        ],
+        "items": [],
+        "kind": "directive",
+        "level": 0,
+        "line": 9,
+        "name": "video",
+        "text": ""
+      },
+      {
+        "args": [
+          {
+            "key": "src",
+            "value": "report.pdf"
+          },
+          {
+            "key": "name",
+            "value": "Report"
+          }
+        ],
+        "items": [],
+        "kind": "directive",
+        "level": 0,
+        "line": 11,
+        "name": "attachment",
+        "text": ""
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "directive",
+        "level": 0,
+        "line": 13,
+        "name": "hr",
+        "text": ""
+      }
+    ],
+    "version": "1.0"
+  },
+  "issues": []
+}

@@ -1,0 +1,58 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "a",
+            "value": "1"
+          },
+          {
+            "key": "",
+            "value": "positional"
+          }
+        ],
+        "items": [],
+        "kind": "directive",
+        "level": 0,
+        "line": 1,
+        "name": "futurething",
+        "text": ""
+      },
+      {
+        "args": [
+          {
+            "key": "x",
+            "value": "y"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 3,
+        "name": "newblock",
+        "text": "payload survives"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "paragraph",
+        "level": 0,
+        "line": 7,
+        "name": "",
+        "text": "Ordinary text after."
+      }
+    ],
+    "version": ""
+  },
+  "issues": [
+    {
+      "line": 1,
+      "severity": "warning"
+    },
+    {
+      "line": 3,
+      "severity": "warning"
+    }
+  ]
+}

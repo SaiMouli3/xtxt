@@ -1,0 +1,12 @@
+@table(caption="Sizes")
+Name | Age | City
+-----|----:|:---:
+John | 20  | Rome
+
+Alice | 22 | Oslo
+@endtable
+
+@table
+A | B
+1 | 2
+@endtable

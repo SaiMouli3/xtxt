@@ -82,7 +82,26 @@ func renderDirectiveText(n Node, opt TextOptions, c ansi) string {
 		return renderTableText(n, c)
 	case "raw":
 		return n.Text + "\n\n"
+	case "chart":
+		return renderChartText(ParseChart(n), opt, c)
+	case "footnote":
+		id := n.Args.Resolve("id")
+		return c.dim("  ["+id+"] ") + InlineText(n.Text) + "\n\n"
 	default:
+		if f := n.Fields(); len(f) > 0 {
+			var b strings.Builder
+			b.WriteString(c.dim("  "+strings.ToUpper(n.Name)) + "\n")
+			for _, e := range f {
+				key := e.Key
+				if key == "" {
+					b.WriteString("    " + indentRest(wrap(InlineText(e.Value), opt.Width-4), 4) + "\n")
+					continue
+				}
+				b.WriteString("    " + c.dim(key+": ") +
+					indentRest(wrap(InlineText(e.Value), opt.Width-6), 6) + "\n")
+			}
+			return b.String() + "\n"
+		}
 		return c.dim("  ["+n.Name+"]") + "\n\n"
 	}
 }
@@ -127,6 +146,54 @@ func renderTableText(n Node, c ansi) string {
 			out = append(out, pad(cell(r, i), i))
 		}
 		b.WriteString("  " + strings.TrimRight(strings.Join(out, "  "), " ") + "\n")
+	}
+	return b.String() + "\n"
+}
+
+// renderChartText draws a chart with block characters. A terminal has no
+// colour worth relying on, so every bar is direct-labelled with its value.
+func renderChartText(ch Chart, opt TextOptions, c ansi) string {
+	if len(ch.Labels) == 0 || len(ch.Series) == 0 {
+		return ""
+	}
+	labelW := 0
+	for _, l := range ch.Labels {
+		labelW = max(labelW, len([]rune(l)))
+	}
+	max_ := 0.0
+	for _, s := range ch.Series {
+		for _, v := range s.Values {
+			max_ = maxf(max_, v)
+		}
+	}
+	if max_ <= 0 {
+		max_ = 1
+	}
+	valueW := 0
+	for _, s := range ch.Series {
+		for _, v := range s.Values {
+			valueW = max(valueW, len(formatNumber(v, ch.Unit)))
+		}
+	}
+	barW := max(10, opt.Width-labelW-valueW-8)
+
+	var b strings.Builder
+	if ch.Title != "" {
+		b.WriteString("  " + c.bold(ch.Title) + "\n")
+	}
+	for i, label := range ch.Labels {
+		for si, s := range ch.Series {
+			name := label
+			if len(ch.Series) > 1 {
+				name = label + seriesSuffix(s.Name)
+			}
+			if si > 0 {
+				name = strings.Repeat(" ", len([]rune(label))) + seriesSuffix(s.Name)
+			}
+			filled := int(float64(barW) * s.Values[i] / max_)
+			b.WriteString("  " + name + strings.Repeat(" ", max(0, labelW-len([]rune(name)))) + " " +
+				strings.Repeat("█", filled) + " " + formatNumber(s.Values[i], ch.Unit) + "\n")
+		}
 	}
 	return b.String() + "\n"
 }

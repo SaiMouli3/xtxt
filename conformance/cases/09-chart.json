@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "type",
+            "value": "bar"
+          },
+          {
+            "key": "title",
+            "value": "Monthly"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 1,
+        "name": "chart",
+        "text": "Jan 20\nFeb 35\nMar 50"
+      },
+      {
+        "args": [
+          {
+            "key": "type",
+            "value": "line"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 7,
+        "name": "chart",
+        "text": "Q | North | South\n1 | 10 | 12\n2 | 14 | 9"
+      }
+    ],
+    "version": ""
+  },
+  "issues": []
+}

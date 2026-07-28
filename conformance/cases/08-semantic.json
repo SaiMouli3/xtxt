@@ -1,0 +1,44 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 1,
+        "name": "task",
+        "text": "Title: Build parser\nStatus: In Progress\nOwner: Subbu\nPriority: High"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 8,
+        "name": "decision",
+        "text": "Parser will use a single line-based pass."
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 12,
+        "name": "knowledge",
+        "text": "Topic: Word2Vec\nDifficulty: Intermediate\nPrerequisites: Linear Algebra"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 18,
+        "name": "chat",
+        "text": "User: What is a CNN?\nAssistant: A convolutional neural network is a model that\nshares weights across spatial positions."
+      }
+    ],
+    "version": ""
+  },
+  "issues": []
+}

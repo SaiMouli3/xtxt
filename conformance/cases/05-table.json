@@ -1,0 +1,31 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "caption",
+            "value": "Sizes"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 1,
+        "name": "table",
+        "text": "Name | Age | City\n-----|----:|:---:\nJohn | 20  | Rome\n\nAlice | 22 | Oslo"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 9,
+        "name": "table",
+        "text": "A | B\n1 | 2"
+      }
+    ],
+    "version": ""
+  },
+  "issues": []
+}

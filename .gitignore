@@ -3,3 +3,7 @@
 !editors/**/*.html
 .DS_Store
 .claude/
+__pycache__/
+.pytest_cache/
+node_modules/
+*.egg-info/

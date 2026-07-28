@@ -1,0 +1,13 @@
+@xtxt(version=1.0)
+
+@image(
+    src="cat.png",
+    caption="A cat, sitting",
+    width=400
+)
+
+@video("demo.mp4")
+
+@attachment(src="report.pdf", name="Report")
+
+@hr

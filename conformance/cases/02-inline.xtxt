@@ -1,0 +1,7 @@
+Some **bold**, some *em*, some `code`, a [link](https://example.com).
+
+Escapes: \*not em\*, \@notadirective, and a footnote[^1].
+
+@footnote(id="1")
+The note body.
+@endfootnote

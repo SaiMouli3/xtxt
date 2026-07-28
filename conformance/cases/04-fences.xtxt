@@ -1,0 +1,18 @@
+@code(language="python")
+
+print("hello")
+
+@endcode
+
+@code
+    indented
+	tabbed
+@endcode
+
+@math
+E = mc^2
+@endmath
+
+@comment
+not rendered
+@endcomment

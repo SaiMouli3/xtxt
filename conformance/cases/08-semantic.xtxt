@@ -1,0 +1,22 @@
+@task
+Title: Build parser
+Status: In Progress
+Owner: Subbu
+Priority: High
+@endtask
+
+@decision
+Parser will use a single line-based pass.
+@enddecision
+
+@knowledge
+Topic: Word2Vec
+Difficulty: Intermediate
+Prerequisites: Linear Algebra
+@endknowledge
+
+@chat
+User: What is a CNN?
+Assistant: A convolutional neural network is a model that
+shares weights across spatial positions.
+@endchat

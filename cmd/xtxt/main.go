@@ -21,6 +21,7 @@ usage:
   xtxt export <file> <format>      convert to another format
   xtxt import <file.md>            convert Markdown to XTXT
   xtxt ast <file>                  print the parse tree as JSON
+  xtxt extract <file>              print the machine-facing view as JSON
 
 formats:
   html   standalone HTML document
@@ -30,6 +31,8 @@ formats:
   json   parse tree
 
 options:
+  --resolve    expand @include and @embed before rendering
+  --plugins <path>  load a plugin manifest (default: nearest xtxt.plugins.json)
   -o <path>    write to a file instead of stdout
   -w <n>       wrap column for text output (default 80)
   --mermaid    in html output, load mermaid.js from a CDN to draw diagrams
@@ -45,9 +48,9 @@ func main() {
 		os.Exit(2)
 	}
 
-	var out string
+	var out, pluginPath string
 	var width = 80
-	var mermaid, noColor bool
+	var mermaid, noColor, resolve bool
 	var rest []string
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -63,6 +66,13 @@ func main() {
 			}
 		case "--mermaid":
 			mermaid = true
+		case "--resolve":
+			resolve = true
+		case "--plugins":
+			i++
+			if i < len(args) {
+				pluginPath = args[i]
+			}
 		case "--no-color":
 			noColor = true
 		case "-h", "--help", "help":
@@ -77,17 +87,19 @@ func main() {
 		os.Exit(2)
 	}
 
+	opts := runOptions{width: width, mermaid: mermaid, resolve: resolve, pluginPath: pluginPath}
 	cmd, files := rest[0], rest[1:]
 	switch cmd {
 	case "validate", "lint":
-		os.Exit(check(files, cmd == "lint"))
+		os.Exit(check(files, cmd == "lint", opts))
 	case "render":
-		emit(out, render(one(files), "text", width, mermaid, !noColor && out == ""))
+		opts.color = !noColor && out == ""
+		emit(out, render(one(files), "text", opts))
 	case "export":
 		if len(files) < 2 {
 			die("export needs a file and a format")
 		}
-		emit(out, render(files[0], files[1], width, mermaid, false))
+		emit(out, render(files[0], files[1], opts))
 	case "import":
 		src, err := read(one(files))
 		if err != nil {
@@ -95,7 +107,9 @@ func main() {
 		}
 		emit(out, xtxt.FromMarkdown(src))
 	case "ast":
-		emit(out, render(one(files), "json", width, false, false))
+		emit(out, render(one(files), "json", opts))
+	case "extract":
+		emit(out, render(one(files), "extract", opts))
 	default:
 		die("unknown command " + cmd)
 	}
@@ -117,43 +131,93 @@ func read(path string) (string, error) {
 	return string(b), err
 }
 
-func load(path string) *xtxt.Result {
+type runOptions struct {
+	width      int
+	mermaid    bool
+	resolve    bool
+	color      bool
+	pluginPath string
+}
+
+// load parses a document and, when asked, expands its @include/@embed
+// references relative to its own directory.
+func load(path string, opts runOptions) *xtxt.Result {
 	src, err := read(path)
 	if err != nil {
 		die(err.Error())
 	}
-	return xtxt.ParseString(src)
+	res := xtxt.ParseString(src)
+	if opts.resolve {
+		doc, issues := xtxt.Resolve(res.Doc, docDir(path))
+		res.Doc = doc
+		res.Issues = append(res.Issues, issues...)
+	}
+	return res
 }
 
-func render(path, format string, width int, mermaid, color bool) string {
-	res := load(path)
+func docDir(path string) string {
+	if path == "-" {
+		return mustCwd()
+	}
+	return filepath.Dir(path)
+}
+
+// loadPlugins finds a manifest explicitly named or sitting beside the document.
+// A missing default manifest is not an error; a named one that fails to load is.
+func loadPlugins(path string, opts runOptions) xtxt.Plugins {
+	manifest := opts.pluginPath
+	explicit := manifest != ""
+	if !explicit {
+		manifest = xtxt.FindPluginManifest(docDir(path))
+	}
+	if manifest == "" {
+		return nil
+	}
+	p, err := xtxt.LoadPlugins(manifest)
+	if err != nil {
+		if explicit {
+			die(manifest + ": " + err.Error())
+		}
+		fmt.Fprintf(os.Stderr, "xtxt: %s: %s (ignored)\n", manifest, err)
+		return nil
+	}
+	return p
+}
+
+func render(path, format string, opts runOptions) string {
+	res := load(path, opts)
 	reportTo(os.Stderr, path, res.Issues)
 	switch format {
 	case "html":
-		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{Full: true, Mermaid: mermaid})
+		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{
+			Full: true, Mermaid: opts.mermaid, Plugins: loadPlugins(path, opts)})
 	case "body":
-		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{})
+		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{Plugins: loadPlugins(path, opts)})
 	case "md", "markdown":
 		return xtxt.RenderMarkdown(res.Doc)
 	case "text", "txt":
-		return xtxt.RenderText(res.Doc, xtxt.TextOptions{Width: width, Color: color})
+		return xtxt.RenderText(res.Doc, xtxt.TextOptions{Width: opts.width, Color: opts.color})
 	case "json", "ast":
 		b, _ := json.MarshalIndent(res.Doc, "", "  ")
 		return string(b) + "\n"
+	case "extract":
+		b, _ := json.MarshalIndent(xtxt.Extract(res.Doc), "", "  ")
+		return string(b) + "\n"
 	default:
-		die("unknown format " + format + " (want html, body, md, text or json)")
+		die("unknown format " + format + " (want html, body, md, text, json or extract)")
 		return ""
 	}
 }
 
-func check(files []string, style bool) int {
+func check(files []string, style bool, opts runOptions) int {
 	if len(files) == 0 {
 		die("nothing to check")
 	}
 	failed := 0
 	for _, f := range files {
-		res := load(f)
-		issues := append(append([]xtxt.Issue{}, res.Issues...), xtxt.Validate(res.Doc)...)
+		res := load(f, opts)
+		declared := loadPlugins(f, opts).Names()
+		issues := append(append([]xtxt.Issue{}, res.Issues...), xtxt.Validate(res.Doc, declared...)...)
 		if style {
 			issues = append(issues, xtxt.Lint(res.Doc)...)
 		}

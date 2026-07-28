@@ -7,9 +7,15 @@ import "strings"
 // error, so that a 1.0 reader stays usable on a newer document.
 var known = map[string]bool{
 	"xtxt": false, "image": false, "video": false, "audio": false,
-	"attachment": false, "include": false, "hr": false,
+	"attachment": false, "include": false, "embed": false, "hr": false,
 	"code": true, "table": true, "math": true, "mermaid": true,
-	"metadata": true, "comment": true, "raw": true,
+	"metadata": true, "comment": true, "raw": true, "chart": true,
+	"footnote": true,
+	// Semantic blocks: structure an agent can read without inferring it from
+	// prose. The core validates their shape and renders them; it deliberately
+	// does not attach meaning to their field names.
+	"task": true, "decision": true, "knowledge": true,
+	"ai": true, "prompt": true, "chat": true, "note": true,
 }
 
 // requiredSrc lists directives that are meaningless without a source.
@@ -18,20 +24,31 @@ var requiredSrc = map[string]bool{
 }
 
 // Validate returns semantic issues on top of the parser's syntactic ones.
-func Validate(doc *Document) []Issue {
+//
+// Names of directives supplied by plugins may be passed in `declared`: a plugin
+// manifest is a declaration that the directive exists, so a document using one
+// should not be warned about as if the name were a typo.
+func Validate(doc *Document, declared ...string) []Issue {
 	var issues []Issue
+	extra := make(map[string]bool, len(declared))
+	for _, name := range declared {
+		extra[name] = true
+	}
 	warn := func(line int, msg string) {
 		issues = append(issues, Issue{Severity: Warning, Line: line, Message: msg})
 	}
 
 	metadataSeen := false
+	seenNotes := map[string]int{}
 	for _, n := range doc.Nodes {
 		if n.Kind != KindDirective && n.Kind != KindBlock {
 			continue
 		}
 		fenced, ok := known[n.Name]
 		if !ok {
-			warn(n.Line, "unknown directive @"+n.Name+" (preserved, but this reader cannot render it)")
+			if !extra[n.Name] {
+				warn(n.Line, "unknown directive @"+n.Name+" (preserved, but this reader cannot render it)")
+			}
 			continue
 		}
 		if fenced && n.Kind != KindBlock {
@@ -55,6 +72,64 @@ func Validate(doc *Document) []Issue {
 			if n.Args.Resolve("language") == "" {
 				warn(n.Line, "@code has no language; syntax highlighting will be skipped")
 			}
+		case "chart":
+			c := ParseChart(n)
+			if len(c.Labels) == 0 {
+				warn(n.Line, "@chart has no readable data rows")
+			}
+			for _, w := range c.Warnings {
+				warn(n.Line, w)
+			}
+		case "task":
+			if n.Fields().Get("title") == "" {
+				warn(n.Line, "@task has no Title field")
+			}
+		case "footnote":
+			if n.Args.Resolve("id") == "" {
+				warn(n.Line, "@footnote has no id; references cannot point at it")
+			}
+			seenNotes[n.Args.Resolve("id")] = n.Line
+		}
+	}
+	issues = append(issues, checkFootnoteRefs(doc, seenNotes)...)
+	return issues
+}
+
+// checkFootnoteRefs pairs [^id] markers with @footnote blocks in both
+// directions: a marker with no note renders as a dead link, and a note nobody
+// cites is usually a leftover.
+func checkFootnoteRefs(doc *Document, notes map[string]int) []Issue {
+	var issues []Issue
+	cited := map[string]bool{}
+	visit := func(text string, line int) {
+		for i := 0; i < len(text); i++ {
+			if text[i] == '\\' {
+				i++
+				continue
+			}
+			if id, end, ok := footnoteRef(text, i); ok {
+				cited[id] = true
+				if _, exists := notes[id]; !exists {
+					issues = append(issues, Issue{Warning, line,
+						"footnote reference [^" + id + "] has no matching @footnote(id=\"" + id + "\")"})
+				}
+				i = end
+			}
+		}
+	}
+	for _, n := range doc.Nodes {
+		switch n.Kind {
+		case KindHeading, KindParagraph, KindQuote:
+			visit(n.Text, n.Line)
+		case KindList:
+			for _, it := range n.Items {
+				visit(it.Text, n.Line)
+			}
+		}
+	}
+	for id, line := range notes {
+		if id != "" && !cited[id] {
+			issues = append(issues, Issue{Warning, line, "@footnote(id=\"" + id + "\") is never referenced"})
 		}
 	}
 	return issues
