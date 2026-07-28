@@ -1,0 +1,38 @@
+{
+  "name": "xtxt",
+  "displayName": "XTXT",
+  "description": "Syntax highlighting and folding for the XTXT document format",
+  "version": "0.1.0",
+  "publisher": "xtxt",
+  "license": "MIT",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "xtxt",
+        "aliases": ["XTXT", "xtxt"],
+        "extensions": [".xtxt"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "xtxt",
+        "scopeName": "text.xtxt",
+        "path": "./syntaxes/xtxt.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.python": "python",
+          "meta.embedded.block.javascript": "javascript",
+          "meta.embedded.block.typescript": "typescript",
+          "meta.embedded.block.go": "go",
+          "meta.embedded.block.rust": "rust",
+          "meta.embedded.block.json": "json",
+          "meta.embedded.block.html": "html",
+          "meta.embedded.block.sql": "sql",
+          "meta.embedded.block.shell": "shellscript"
+        }
+      }
+    ]
+  }
+}

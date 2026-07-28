@@ -1,0 +1,79 @@
+@xtxt(version=1.0)
+
+@metadata
+title = Machine Learning Notes
+author = Subbu
+created = 2026-07-29
+tags = ml, notes
+@endmetadata
+
+# Machine Learning
+
+Neural networks are inspired by the brain: layers of simple units that each
+learn a small part of a much larger function. The interesting part is not any
+single unit but **what falls out of stacking them**.
+
+> A neural network is a differentiable program.
+
+@image(
+    src="cnn.png",
+    alt="Diagram of a convolutional neural network",
+    caption="A convolutional network, one block per stage",
+    width=600
+)
+
+The diagram above shows the three stages: convolution, pooling, and a fully
+connected head. Each stage is a function; training is `gradient descent` over
+their composition.
+
+## Layer sizes
+
+@table(caption="Parameter count by layer")
+Layer | Parameters | Notes
+------|-----------:|------
+Conv1 |        256 | 3x3 kernels
+Conv2 |        512 | 3x3 kernels
+FC    |     10,240 | the bulk of the model
+@endtable
+
+## Training loop
+
+@code(language="python")
+for batch in loader:
+    loss = criterion(model(batch.x), batch.y)
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+@endcode
+
+## The objective
+
+@math
+E = mc^2
+@endmath
+
+## Pipeline
+
+@mermaid
+graph TD
+  A[Raw data] --> B[Features]
+  B --> C[Model]
+  C --> D[Predictions]
+@endmermaid
+
+## To do
+
+- [x] Write up the convolution stage
+- [ ] Add a section on regularisation
+- [ ] Benchmark against the [baseline](https://example.com/baseline)
+
+@comment
+The regularisation section needs a rewrite before this goes out.
+@endcomment
+
+@attachment(src="paper.pdf", name="Original paper")
+
+@hr
+
+Written in XTXT. To write a literal directive in prose, escape it:
+\@image is the image directive.

@@ -1,0 +1,118 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "XTXT",
+  "scopeName": "text.xtxt",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#code" },
+    { "include": "#metadata" },
+    { "include": "#fence" },
+    { "include": "#directive" },
+    { "include": "#heading" },
+    { "include": "#quote" },
+    { "include": "#list" },
+    { "include": "#inline" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.block.xtxt",
+      "begin": "^@comment\\b",
+      "end": "^@endcomment\\s*$",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.xtxt" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.comment.xtxt" } }
+    },
+    "code": {
+      "begin": "^(@code)(?:\\((?:language=)?\"?([A-Za-z0-9_+#-]*)\"?[^)]*\\))?\\s*$",
+      "end": "^(@endcode)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.directive.xtxt" },
+        "2": { "name": "entity.name.type.language.xtxt" }
+      },
+      "endCaptures": { "1": { "name": "keyword.control.directive.xtxt" } },
+      "contentName": "meta.embedded.block.$2",
+      "patterns": [{ "include": "source.python" }, { "include": "source.go" }, { "include": "source.js" }]
+    },
+    "metadata": {
+      "begin": "^(@metadata)\\s*$",
+      "end": "^(@endmetadata)\\s*$",
+      "beginCaptures": { "1": { "name": "keyword.control.directive.xtxt" } },
+      "endCaptures": { "1": { "name": "keyword.control.directive.xtxt" } },
+      "patterns": [
+        {
+          "match": "^\\s*([A-Za-z0-9_-]+)\\s*(=)\\s*(.*)$",
+          "captures": {
+            "1": { "name": "variable.other.key.xtxt" },
+            "2": { "name": "keyword.operator.assignment.xtxt" },
+            "3": { "name": "string.unquoted.xtxt" }
+          }
+        }
+      ]
+    },
+    "fence": {
+      "begin": "^(@)([A-Za-z_][A-Za-z0-9_-]*)(?=\\s*(\\(|$))",
+      "end": "^(@end)(\\2)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.keyword.xtxt" },
+        "2": { "name": "keyword.control.directive.xtxt" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.keyword.xtxt" },
+        "2": { "name": "keyword.control.directive.xtxt" }
+      },
+      "patterns": [{ "include": "#args" }]
+    },
+    "directive": {
+      "match": "^(@)([A-Za-z_][A-Za-z0-9_-]*)",
+      "captures": {
+        "1": { "name": "punctuation.definition.keyword.xtxt" },
+        "2": { "name": "keyword.control.directive.xtxt" }
+      }
+    },
+    "args": {
+      "patterns": [
+        {
+          "match": "([A-Za-z_][A-Za-z0-9_-]*)\\s*(=)",
+          "captures": {
+            "1": { "name": "variable.parameter.xtxt" },
+            "2": { "name": "keyword.operator.assignment.xtxt" }
+          }
+        },
+        { "name": "string.quoted.double.xtxt", "begin": "\"", "end": "\"", "patterns": [{ "match": "\\\\." , "name": "constant.character.escape.xtxt" }] },
+        { "name": "constant.numeric.xtxt", "match": "\\b\\d+(\\.\\d+)?\\b" }
+      ]
+    },
+    "heading": {
+      "match": "^(#{1,6})\\s+(.*)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.xtxt" },
+        "2": { "name": "markup.heading.xtxt entity.name.section.xtxt" }
+      }
+    },
+    "quote": {
+      "name": "markup.quote.xtxt",
+      "match": "^\\s*>.*$"
+    },
+    "list": {
+      "match": "^\\s*([-*]|\\d+\\.)\\s+(\\[[ xX]\\])?",
+      "captures": {
+        "1": { "name": "punctuation.definition.list.xtxt" },
+        "2": { "name": "constant.language.checkbox.xtxt" }
+      }
+    },
+    "inline": {
+      "patterns": [
+        { "name": "markup.bold.xtxt", "match": "\\*\\*[^*]+\\*\\*" },
+        { "name": "markup.italic.xtxt", "match": "(?<!\\*)\\*[^*]+\\*(?!\\*)" },
+        { "name": "markup.inline.raw.xtxt", "match": "`[^`]+`" },
+        {
+          "match": "(\\[)([^\\]]*)(\\])(\\()([^)]*)(\\))",
+          "captures": {
+            "2": { "name": "string.other.link.title.xtxt" },
+            "5": { "name": "markup.underline.link.xtxt" }
+          }
+        },
+        { "name": "constant.character.escape.xtxt", "match": "\\\\." }
+      ]
+    }
+  }
+}
