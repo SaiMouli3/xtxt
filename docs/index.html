@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XTXT — plain text that machines can read</title>
+<meta name="description" content="A plain-text document format that carries images, tables, charts and machine-readable records — and still opens in any text editor.">
+<link rel="stylesheet" href="./xtxt.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📄</text></svg>">
+<style>
+  :root { --page-max: 76rem; }
+  body { font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .wrap { max-width: var(--page-max); margin: 0 auto; padding: 0 1.25rem; }
+
+  header.hero { padding: 4.5rem 0 2.5rem; text-align: center; }
+  .hero h1 { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(2.6rem, 8vw, 4.2rem); letter-spacing: -.03em; margin: 0 0 .4rem; }
+  .hero .tag { font-size: clamp(1.05rem, 2.6vw, 1.35rem); color: var(--fg); max-width: 34rem; margin: 0 auto 1rem; }
+  .hero .sub { color: var(--muted); max-width: 40rem; margin: 0 auto 2rem; }
+  .cta { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+  .cta a { display: inline-block; padding: .6rem 1.1rem; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: .95rem; border: 1px solid var(--rule); color: var(--fg); }
+  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .why { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.4rem; margin: 3.5rem 0 1rem; }
+  .why div { border-top: 2px solid var(--rule); padding-top: .9rem; }
+  .why h3 { margin: 0 0 .3rem; font-size: .95rem; }
+  .why p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+  .demo { margin: 3rem 0 1rem; }
+  .bar { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin-bottom: .8rem; }
+  .bar button { font: inherit; font-size: .85rem; padding: .35rem .8rem; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--muted); cursor: pointer; }
+  .bar button[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+  .bar .spacer { flex: 1 1 auto; }
+  .status { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .status.bad { color: #e34948; }
+
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: stretch; }
+  @media (max-width: 60rem) { .panes { grid-template-columns: 1fr; } }
+  .pane { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 34rem; }
+  .pane > h2 { margin: 0; font-size: .7rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); padding: .7rem 1rem; border-bottom: 1px solid var(--rule); font-weight: 600; }
+  #src { flex: 1; border: 0; resize: vertical; padding: 1rem; background: transparent; color: var(--fg); font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  #src:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+  #out { flex: 1; overflow: auto; padding: .4rem 1.4rem 1.4rem; }
+  #out .xtxt-preview > :first-child { margin-top: .8rem; }
+  #out pre.json { font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .issues { margin: 0; padding: .7rem 1rem; border-bottom: 1px solid var(--rule); font-size: .8rem; font-family: ui-monospace, monospace; color: var(--muted); }
+  .issues .error { color: #e34948; }
+
+  footer { margin: 4rem 0 5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .87rem; display: flex; gap: 1.2rem; flex-wrap: wrap; }
+  footer a { color: var(--muted); }
+  noscript p { text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <h1>xtxt</h1>
+    <p class="tag">Plain text that machines can read — <em>without guessing</em>.</p>
+    <p class="sub">
+      Markdown makes an agent infer structure from prose. XTXT lets the document
+      carry it: images, tables, charts and typed records, in a file that still
+      opens in any text editor and diffs cleanly in git.
+    </p>
+    <p class="cta">
+      <a class="primary" href="https://github.com/SaiMouli3/xtxt">GitHub</a>
+      <a href="https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md">Read the spec</a>
+      <a href="#demo">Try it below</a>
+    </p>
+  </header>
+
+  <section class="why">
+    <div>
+      <h3>One syntax for everything</h3>
+      <p><code>@name(args)</code> for one thing, <code>@name … @endname</code> for a block. That is the whole format; a new feature is a new name.</p>
+    </div>
+    <div>
+      <h3>Unknown blocks never break</h3>
+      <p>A reader from today stays useful on a document written tomorrow. Unknown directives are a warning, never an error, and always survive a round trip.</p>
+    </div>
+    <div>
+      <h3>Records, not prose to parse</h3>
+      <p><code>@task</code>, <code>@decision</code>, <code>@knowledge</code> — or a name nobody has invented yet. <code>xtxt extract</code> hands an agent the structure directly.</p>
+    </div>
+    <div>
+      <h3>Three agreeing implementations</h3>
+      <p>Go, Python and JavaScript, each held to the same conformance suite. A fourth joins the standard by passing it.</p>
+    </div>
+  </section>
+
+  <section class="demo" id="demo">
+    <div class="bar" role="group" aria-label="Example documents">
+      <button type="button" data-example="agent" aria-pressed="true">Agent records</button>
+      <button type="button" data-example="notes" aria-pressed="false">Rich notes</button>
+      <button type="button" data-example="chart" aria-pressed="false">Charts</button>
+      <button type="button" data-example="unknown" aria-pressed="false">Forward compatibility</button>
+      <span class="spacer"></span>
+      <button type="button" id="mode-render" aria-pressed="true">Rendered</button>
+      <button type="button" id="mode-extract" aria-pressed="false">extract →  JSON</button>
+    </div>
+
+    <div class="panes">
+      <div class="pane">
+        <h2>notes.xtxt</h2>
+        <label for="src" class="visually-hidden" hidden>XTXT source</label>
+        <textarea id="src" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+      </div>
+      <div class="pane">
+        <h2 id="out-title">Rendered</h2>
+        <p class="issues" id="issues" hidden></p>
+        <div id="out"><div class="xtxt-preview"></div></div>
+      </div>
+    </div>
+
+    <noscript><p>The live demo needs JavaScript. The format does not — see the <a href="https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md">spec</a>.</p></noscript>
+  </section>
+
+  <footer>
+    <span>MIT licensed</span>
+    <a href="https://github.com/SaiMouli3/xtxt">Source</a>
+    <a href="https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md">Specification</a>
+    <a href="https://github.com/SaiMouli3/xtxt/tree/main/conformance">Conformance suite</a>
+    <span>Rendered in your browser by the JavaScript SDK — nothing is uploaded.</span>
+  </footer>
+
+</div>
+
+<script type="module">
+import { parse, validate, extract, renderHTML } from './xtxt.js';
+
+const EXAMPLES = {
+  agent: `@metadata
+title = Project Log
+author = Subbu
+@endmetadata
+
+# Project Log
+
+A document written for two readers at once: a person in any text editor,
+and an agent that needs the structure without guessing at it.
+
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+Due: 2026-08-15
+@endtask
+
+@decision
+Title: Unknown directives are warnings, never errors
+Why: A reader from today must stay useful on a document written tomorrow.
+@enddecision
+
+@knowledge
+Topic: Line-based parsing
+Difficulty: Intermediate
+Summary:
+XTXT does not nest, so a single pass is enough. That is a constraint on
+the format, not a limitation of the parser.
+@endknowledge
+
+Switch to **extract → JSON** to see what an agent receives.
+`,
+
+  notes: `# Machine Learning
+
+Neural networks are inspired by the brain: layers of simple units that each
+learn a small part of a much larger function.
+
+> A neural network is a differentiable program.
+
+@image(src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Colored_neural_network.svg/320px-Colored_neural_network.svg.png", caption="A small feedforward network", width=320)
+
+@table(caption="Parameter count by layer")
+Layer | Parameters | Notes
+------|-----------:|------
+Conv1 |        256 | 3x3 kernels
+Conv2 |        512 | 3x3 kernels
+FC    |     10,240 | the bulk of the model
+@endtable
+
+@code(language="python")
+for batch in loader:
+    loss = criterion(model(batch.x), batch.y)
+    loss.backward()
+    optimizer.step()
+@endcode
+
+## To do
+
+- [x] Write up the convolution stage
+- [ ] Add a section on regularisation
+
+Inline formatting works too: **bold**, *emphasis*, \`code\`, and a
+[link](https://github.com/SaiMouli3/xtxt). Footnotes as well[^1].
+
+@footnote(id="1")
+Markers and notes are matched by id, and mismatches are linted.
+@endfootnote
+`,
+
+  chart: `# Progress
+
+@chart(type="bar", title="Blocks implemented per week", unit=" blocks")
+Week 1 | 4
+Week 2 | 9
+Week 3 | 14
+Week 4 | 21
+@endchart
+
+Charts are inline SVG: no script, no dependency, themed by CSS. The palette
+is validated for colour-vision deficiency and for contrast on both surfaces,
+and every chart ships a table view — because colour alone is not an
+accessible encoding.
+
+@chart(type="line", title="Conformance cases passing")
+Day | Go | Python | JavaScript
+1   | 10 | 0      | 0
+2   | 10 | 10     | 0
+3   | 10 | 10     | 10
+@endchart
+
+@chart(type="pie", title="Where the code lives")
+Parser | 620
+Renderers | 540
+SDKs | 900
+@endchart
+
+Note that the pie renders as a proportion bar. Lengths can be compared;
+angles cannot.
+`,
+
+  unknown: `# Forward compatibility
+
+This build has never heard of a single directive below. Nothing breaks.
+
+@experiment
+Hypothesis: agents parse records more reliably than prose
+Confidence: 0.7
+Status: untested
+@endexperiment
+
+An unknown *block* whose payload looks like a record still renders as one,
+still round-trips, and still appears in \`extract\`. No reader update was
+needed to get here.
+
+@timeline
+2026-01: started
+2026-07: three implementations agree
+@endtimeline
+
+@sparkline(data="1,4,9,16", style="dense")
+
+An unknown *inline* directive is shown rather than dropped, so you can see
+that something newer is present instead of silently losing it.
+
+That is the whole compatibility story: adding a name is a minor version,
+and old readers keep working. Check the validator output above — warnings,
+never errors.
+`,
+};
+
+const src = document.getElementById('src');
+const out = document.getElementById('out');
+const outTitle = document.getElementById('out-title');
+const issuesEl = document.getElementById('issues');
+let mode = 'render';
+
+function show(text, kind) {
+  issuesEl.hidden = !text;
+  issuesEl.innerHTML = text;
+  issuesEl.classList.toggle('bad', kind === 'error');
+}
+
+function update() {
+  const text = src.value;
+  let res;
+  try {
+    res = parse(text);
+  } catch (e) {
+    show(`<span class="error">parser crashed: ${e.message}</span>`, 'error');
+    return;
+  }
+
+  const issues = [...res.issues, ...validate(res.doc)].sort((a, b) => a.line - b.line);
+  show(issues.length
+    ? issues.map((i) => `<span class="${i.severity}">${i.line}: ${i.severity}: ${i.message}</span>`).join('<br>')
+    : `<span>ok — ${res.doc.nodes.length} blocks, no problems</span>`);
+
+  if (mode === 'render') {
+    outTitle.textContent = 'Rendered';
+    out.innerHTML = '<div class="xtxt-preview"></div>';
+    out.firstElementChild.innerHTML = renderHTML(res.doc);
+  } else {
+    outTitle.textContent = 'xtxt extract';
+    const pre = document.createElement('pre');
+    pre.className = 'json';
+    pre.textContent = JSON.stringify(extract(res.doc), null, 2);
+    out.replaceChildren(pre);
+  }
+}
+
+function pick(name) {
+  src.value = EXAMPLES[name];
+  document.querySelectorAll('[data-example]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.example === name));
+  });
+  update();
+}
+
+document.querySelectorAll('[data-example]').forEach((b) => {
+  b.addEventListener('click', () => pick(b.dataset.example));
+});
+
+function setMode(next) {
+  mode = next;
+  document.getElementById('mode-render').setAttribute('aria-pressed', String(next === 'render'));
+  document.getElementById('mode-extract').setAttribute('aria-pressed', String(next === 'extract'));
+  update();
+}
+document.getElementById('mode-render').addEventListener('click', () => setMode('render'));
+document.getElementById('mode-extract').addEventListener('click', () => setMode('extract'));
+
+let timer;
+src.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(update, 90);
+});
+
+pick('agent');
+</script>
+
+</body>
+</html>

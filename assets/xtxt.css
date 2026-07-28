@@ -1,0 +1,57 @@
+:root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fff; --muted:#666; --rule:#e3e3e3; --code-bg:#f6f6f6; --accent:#3b5bdb; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e6e6e6; --bg:#151515; --muted:#9a9a9a; --rule:#333; --code-bg:#1e1e1e; --accent:#8aa2ff; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 ui-serif, Georgia, "Times New Roman", serif; }
+.xtxt { max-width: 44rem; margin: 0 auto; padding: 3rem 1.25rem 6rem; }
+h1,h2,h3,h4,h5,h6 { font-family: ui-sans-serif, system-ui, sans-serif; line-height:1.25; margin:2.2em 0 .6em; }
+h1 { font-size:2.1rem; margin-top:0; } h2 { font-size:1.5rem; } h3 { font-size:1.2rem; }
+p { margin: 0 0 1.1em; }
+a { color: var(--accent); }
+blockquote { margin:1.5em 0; padding:.2em 0 .2em 1.2em; border-left:3px solid var(--rule); color:var(--muted); }
+ul,ol { padding-left:1.4em; margin:0 0 1.1em; }
+ul.checklist { list-style:none; padding-left:.2em; }
+ul.checklist input { margin-right:.4em; }
+figure { margin:2em 0; text-align:center; }
+figure img, figure video { max-width:100%; height:auto; border-radius:4px; }
+figcaption { font-size:.85rem; color:var(--muted); margin-top:.6em; font-family:ui-sans-serif,system-ui,sans-serif; }
+pre { background:var(--code-bg); padding:1rem; border-radius:6px; overflow-x:auto; }
+pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.875rem; }
+p code, li code, td code { background:var(--code-bg); padding:.12em .35em; border-radius:3px; }
+table { border-collapse:collapse; width:100%; margin:2em 0; font-family:ui-sans-serif,system-ui,sans-serif; font-size:.92rem; display:block; overflow-x:auto; }
+th,td { border-bottom:1px solid var(--rule); padding:.55em .7em; text-align:left; }
+th { font-weight:600; border-bottom-width:2px; }
+caption { caption-side:bottom; color:var(--muted); font-size:.85rem; padding-top:.6em; }
+hr { border:0; border-top:1px solid var(--rule); margin:3em 0; }
+.math { margin:1.6em 0; text-align:center; font-family:ui-serif,Georgia,serif; font-size:1.15rem; font-style:italic; }
+.unknown { border:1px dashed var(--rule); border-radius:6px; padding:.8em 1em; margin:1.5em 0; color:var(--muted); white-space:pre-wrap; font-family:ui-monospace,monospace; font-size:.8rem; }
+.attachment a::before { content:"\1F4CE\00a0"; }
+
+/* Charts. Categorical slots 1-3 of a palette validated for CVD and
+   normal-vision separation on both surfaces; dark steps are selected for the
+   dark surface, not flipped from the light ones. */
+:root { --chart-1:#2a78d6; --chart-2:#eb6834; --chart-3:#1baf7a; --chart-surface:#fff; --chart-grid:#e3e3e3; }
+@media (prefers-color-scheme: dark) { :root { --chart-1:#3987e5; --chart-2:#d95926; --chart-3:#199e70; --chart-surface:#151515; --chart-grid:#333; } }
+figure.chart { margin:2em 0; text-align:left; }
+.xtxt-chart { display:block; max-width:100%; overflow:visible; font-family:ui-sans-serif,system-ui,sans-serif; }
+.xtxt-chart .c-label { font-size:12px; fill:var(--fg); }
+.xtxt-chart .c-value { font-size:11px; fill:var(--muted); }
+.xtxt-chart .c-inbar { font-size:11px; fill:#fff; font-weight:600; }
+.xtxt-chart .c-axis  { font-size:10px; fill:var(--muted); }
+.xtxt-chart .c-grid  { stroke:var(--chart-grid); stroke-width:1; }
+.chart-data { margin-top:.5em; font-size:.85rem; }
+.chart-data summary { cursor:pointer; color:var(--muted); font-family:ui-sans-serif,system-ui,sans-serif; }
+.chart-data table { margin:.6em 0 0; }
+@media (forced-colors: active) { .xtxt-chart path, .xtxt-chart rect, .xtxt-chart polyline { forced-color-adjust:none; } }
+
+/* Record blocks: @task, @decision, @knowledge, @ai, @chat and friends. */
+.record { border:1px solid var(--rule); border-left:3px solid var(--accent); border-radius:6px; padding:.9em 1.1em; margin:1.8em 0; }
+.record-type { font-family:ui-sans-serif,system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin:0 0 .6em; font-weight:600; }
+.record dl { display:grid; grid-template-columns:minmax(4.5rem,max-content) 1fr; gap:.35em .9em; margin:0; font-size:.94rem; }
+.record dt { font-family:ui-sans-serif,system-ui,sans-serif; font-size:.8rem; color:var(--muted); padding-top:.15em; }
+.record dd { margin:0; white-space:pre-wrap; }
+
+/* Footnotes. */
+.fnref a { text-decoration:none; padding:0 .1em; }
+.footnotes { margin-top:3em; padding-top:1.2em; border-top:1px solid var(--rule); font-size:.88rem; color:var(--muted); }
+.footnotes li { margin-bottom:.4em; }
+.fnback { text-decoration:none; }

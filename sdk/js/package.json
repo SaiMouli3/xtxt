@@ -4,12 +4,32 @@
   "description": "Parser and renderer for the XTXT plain-text document format",
   "type": "module",
   "main": "xtxt.js",
-  "exports": { ".": "./xtxt.js" },
-  "files": ["xtxt.js", "README.md"],
-  "engines": { "node": ">=18" },
-  "scripts": { "test": "node --test" },
-  "keywords": ["xtxt", "document", "format", "parser", "markdown"],
+  "exports": {
+    ".": "./xtxt.js"
+  },
+  "files": [
+    "xtxt.js",
+    "chart.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "xtxt",
+    "document",
+    "format",
+    "parser",
+    "markdown"
+  ],
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/SaiMouli3/xtxt.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SaiMouli3/xtxt.git"
+  },
   "homepage": "https://github.com/SaiMouli3/xtxt#readme"
 }

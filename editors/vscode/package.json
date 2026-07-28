@@ -5,14 +5,23 @@
   "version": "0.1.0",
   "publisher": "xtxt",
   "license": "MIT",
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Programming Languages"],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
   "contributes": {
     "languages": [
       {
         "id": "xtxt",
-        "aliases": ["XTXT", "xtxt"],
-        "extensions": [".xtxt"],
+        "aliases": [
+          "XTXT",
+          "xtxt"
+        ],
+        "extensions": [
+          ".xtxt"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -34,5 +43,28 @@
         }
       }
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SaiMouli3/xtxt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SaiMouli3/xtxt/issues"
+  },
+  "homepage": "https://github.com/SaiMouli3/xtxt#readme",
+  "keywords": [
+    "xtxt",
+    "document",
+    "markdown",
+    "notes",
+    "format"
+  ],
+  "galleryBanner": {
+    "color": "#151515",
+    "theme": "dark"
+  },
+  "scripts": {
+    "package": "npx --yes @vscode/vsce package",
+    "publish": "npx --yes @vscode/vsce publish"
   }
 }

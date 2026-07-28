@@ -8,6 +8,10 @@
  * @module xtxt
  */
 
+import { renderChart } from './chart.js';
+
+export { parseChart, renderChart, renderChartSVG, chartTableHTML } from './chart.js';
+
 const NAME_START = /[A-Za-z_]/;
 const NAME_BYTE = /[A-Za-z0-9_-]/;
 
@@ -371,13 +375,21 @@ export function parseTable(n) {
 // Records
 // ---------------------------------------------------------------------------
 
-/** An ordered `Key: value` record; order is meaningful (see `@chat`). */
+/**
+ * An ordered `Key: value` record; order is meaningful (see `@chat`).
+ *
+ * Note the name `toObject` rather than `map`: this extends Array, so a method
+ * called `map` would shadow `Array.prototype.map` and quietly break every
+ * `fields.map(fn)` in the codebase. Go and Python spell the same method `Map`
+ * and `map` because their list types have no such collision.
+ */
 export class Fields extends Array {
   get(key) {
     for (const f of this) if (f.key.toLowerCase() === key.toLowerCase()) return f.value;
     return '';
   }
-  map() {
+  /** Flatten to a lowercase-keyed object, keeping the first of any duplicate. */
+  toObject() {
     const out = {};
     for (const f of this) {
       const k = f.key.toLowerCase();
@@ -739,13 +751,13 @@ function absorb(out, n, prose) {
     n.args.forEach((a, i) => { block.args[a.key || String(i)] = a.value; });
   }
   if (f.length) {
-    block.fields = f.map();
-    block.order = f.map((x) => x.key);
+    block.fields = f.toObject();
+    block.order = [...f].map((x) => x.key);
   }
   out.blocks.push(block);
 
   if (n.name === 'task') {
-    const m = f.map();
+    const m = f.toObject();
     const status = m.status ?? '';
     out.tasks.push({
       title: m.title || m[''] || '', status, owner: m.owner ?? '', due: m.due ?? '',
@@ -860,11 +872,13 @@ function directiveHTML(n) {
     case 'mermaid': return `<pre class="mermaid">${e(n.text)}</pre>`;
     case 'raw': return n.args.resolve('format') === 'html' ? n.text : `<pre>${e(n.text)}</pre>`;
     case 'table': return tableHTML(n);
+    case 'chart': return renderChart(n);
     default: {
       if (n.kind === 'block') {
         const f = n.fields();
         if (f.length) {
-          const rows = f.map((x) => `<dt>${e(x.key || '—')}</dt><dd>${inlineHTML(x.value)}</dd>`).join('');
+          const rows = [...f]
+            .map((x) => `<dt>${e(x.key || '—')}</dt><dd>${inlineHTML(x.value)}</dd>`).join('');
           return `<section class="record" data-type="${e(n.name)}">`
             + `<h4 class="record-type">${e(n.name)}</h4><dl>${rows}</dl></section>`;
         }

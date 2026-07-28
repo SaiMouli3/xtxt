@@ -1,8 +1,18 @@
 # XTXT
 
-A plain-text document format that keeps images, tables, code, diagrams, math and
-metadata **in the file**, in a form you can still read in `cat`, edit in `vi`,
-and diff in `git`.
+[![ci](https://github.com/SaiMouli3/xtxt/actions/workflows/ci.yml/badge.svg)](https://github.com/SaiMouli3/xtxt/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/SaiMouli3/xtxt.svg)](https://pkg.go.dev/github.com/SaiMouli3/xtxt)
+[![PyPI](https://img.shields.io/pypi/v/xtxt?label=pypi)](https://pypi.org/project/xtxt/)
+[![npm](https://img.shields.io/npm/v/xtxt?label=npm)](https://www.npmjs.com/package/xtxt)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**Plain text that machines can read — without guessing.**
+
+Markdown makes an agent infer structure from prose. XTXT lets the document
+carry it: images, tables, charts and typed records, in a file that still opens
+in any text editor and diffs cleanly in git.
+
+### → [Try it in your browser](https://saimouli3.github.io/xtxt/)
 
 ```text
 # Machine Learning
@@ -11,21 +21,22 @@ Neural networks are inspired by the brain.
 
 @image(src="cnn.png", caption="CNN Architecture", width=600)
 
-@table
-Layer | Parameters
-------|-----------
-Conv1 | 256
-Conv2 | 512
-@endtable
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+@endtask
 ```
 
-Everything non-textual uses one syntax — `@name(args)` for a single item,
-`@name … @endname` for a block. That is the whole format. The rest is which
-names exist, and adding a name never breaks an old reader.
+That `@task` is not a comment or a convention — it is a block the parser
+returns and `xtxt extract` hands to an agent as JSON. Everything non-textual
+uses one syntax: `@name(args)` for a single item, `@name … @endname` for a
+block. That is the whole format. Adding a name never breaks an old reader.
 
 - **[SPEC.md](SPEC.md)** — the format definition. Implementable in an afternoon.
-- **[examples/notes.xtxt](examples/notes.xtxt)** — a document using every feature.
-- **[examples/agent-notes.xtxt](examples/agent-notes.xtxt)** — the same idea aimed at agents.
+- **[Live demo](https://saimouli3.github.io/xtxt/)** — edit XTXT, watch it render.
+- **[examples/agent-notes.xtxt](examples/agent-notes.xtxt)** — every feature, aimed at agents.
+- **[conformance/](conformance/)** — the fixtures that define "an XTXT parser".
 
 ## Structure a machine can read
 
@@ -33,13 +44,6 @@ The part that is not Markdown-with-extra-steps: a document can carry records,
 next to the prose they describe.
 
 ```text
-@task
-Title: Ship the reference parser
-Status: In Progress
-Owner: Subbu
-Due: 2026-08-15
-@endtask
-
 @decision
 Title: Unknown directives are warnings, never errors
 Why: A reader from today must stay useful on a document written tomorrow.

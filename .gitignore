@@ -1,5 +1,6 @@
 /xtxt
 *.html
+!docs/*.html
 !editors/**/*.html
 .DS_Store
 .claude/
