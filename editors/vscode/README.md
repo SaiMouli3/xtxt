@@ -33,7 +33,7 @@ that — so the preview panel is where you see them, the same way Markdown works
 git clone https://github.com/SaiMouli3/xtxt
 cd xtxt/editors/vscode
 npm install && npm run build
-npx @vscode/vsce package
+npx @vscode/vsce package --no-dependencies
 code --install-extension xtxt-*.vsix
 ```
 

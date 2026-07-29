@@ -133,7 +133,10 @@ jobs:
         working-directory: editors/vscode
       - run: npm run build
         working-directory: editors/vscode
-      - run: npx --yes @vscode/vsce package --out /tmp/xtxt.vsix
+      # --no-dependencies: esbuild already bundles xtxt-js into out/extension.js,
+      # and without it vsce walks the workspace-hoisted node_modules at the repo
+      # root and tries to package the entire repository.
+      - run: npx --yes @vscode/vsce package --no-dependencies --out /tmp/xtxt.vsix
         working-directory: editors/vscode
 
   packaging:
