@@ -161,8 +161,8 @@ spec, shows every paragraph, and shows a placeholder where the new thing was.
 | Go | this module | `go get github.com/SaiMouli3/xtxt` |
 | Python | `sdk/python` | `pip install xtxt` |
 | JavaScript | `sdk/js` | `npm install xtxt-js` |
-| Rust | `sdk/rust` | `cargo add xtxt` |
-| Java | `sdk/java` | `io.github.saimouli3:xtxt:0.1.2` |
+| Rust | `sdk/rust` | build from source — not yet on crates.io |
+| Java | `sdk/java` | build from source — not yet on Maven Central |
 | C | `sdk/c` | `make` — C99, no dependencies |
 | C++ | `sdk/cpp` | `cmake` — C++17, wraps the C library |
 

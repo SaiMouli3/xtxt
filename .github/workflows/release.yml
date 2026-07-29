@@ -54,7 +54,9 @@ jobs:
       - id: token
         run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
       - if: steps.token.outputs.present != 'true'
-        run: echo "::notice::NPM_TOKEN is not set; skipping the npm publish."
+        run: |
+          echo "::warning::NPM_TOKEN is not set — xtxt-js was NOT published."
+          echo "### npm (xtxt-js): SKIPPED — no NPM_TOKEN" >> "$GITHUB_STEP_SUMMARY"
       - if: steps.token.outputs.present == 'true'
         uses: actions/checkout@v4
       - if: steps.token.outputs.present == 'true'
@@ -80,7 +82,9 @@ jobs:
       - id: token
         run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
       - if: steps.token.outputs.present != 'true'
-        run: echo "::notice::NPM_TOKEN is not set; skipping the xtxt-mcp publish."
+        run: |
+          echo "::warning::NPM_TOKEN is not set — xtxt-mcp was NOT published."
+          echo "### npm (xtxt-mcp): SKIPPED — no NPM_TOKEN" >> "$GITHUB_STEP_SUMMARY"
       - if: steps.token.outputs.present == 'true'
         uses: actions/checkout@v4
       - if: steps.token.outputs.present == 'true'
@@ -101,7 +105,9 @@ jobs:
       - id: token
         run: echo "present=${{ secrets.CARGO_REGISTRY_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
       - if: steps.token.outputs.present != 'true'
-        run: echo "::notice::CARGO_REGISTRY_TOKEN is not set; skipping the crates.io publish."
+        run: |
+          echo "::warning::CARGO_REGISTRY_TOKEN is not set — the crate was NOT published."
+          echo "### crates.io: SKIPPED — no CARGO_REGISTRY_TOKEN" >> "$GITHUB_STEP_SUMMARY"
       - if: steps.token.outputs.present == 'true'
         uses: actions/checkout@v4
       - if: steps.token.outputs.present == 'true'
@@ -113,3 +119,31 @@ jobs:
         working-directory: sdk/rust
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # A skipped publish reports as success, which once left the README telling
+  # people to `cargo add xtxt` for a crate that was never published. This job
+  # checks the registries themselves and fails if a claim is not true.
+  verify:
+    needs: [github-release, pypi, npm, npm-mcp, crates]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report what actually reached each registry
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "## Published for $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Registry | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          check() {
+            if curl -sfL -H "User-Agent: xtxt-release" "$2" | grep -q "$VERSION"; then
+              echo "| $1 | published |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| $1 | **MISSING** |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::warning::$1 does not have $VERSION"
+            fi
+          }
+          check "PyPI (xtxt)"      "https://pypi.org/pypi/xtxt/json"
+          check "npm (xtxt-js)"    "https://registry.npmjs.org/xtxt-js"
+          check "npm (xtxt-mcp)"   "https://registry.npmjs.org/xtxt-mcp"
+          check "crates.io (xtxt)" "https://crates.io/api/v1/crates/xtxt"

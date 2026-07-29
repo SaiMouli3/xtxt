@@ -8,10 +8,12 @@ that lands on an uninstallable repo converts nobody.
 
 ## Pre-flight
 
-- [ ] `pip install xtxt` works
-- [ ] `npm install xtxt-js` works
-- [ ] `go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest` works
-- [ ] `cargo add xtxt` works
+- [x] `pip install xtxt` works
+- [x] `npm install xtxt-js` works — and `npx xtxt-mcp` runs
+- [x] `go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest` works
+- [ ] `cargo add xtxt` — **not published**; needs CARGO_REGISTRY_TOKEN, or say
+      "build from source" in the post. Do not claim it until it resolves.
+- [ ] Maven Central — **not published**; manual, needs GPG. Same rule.
 - [ ] <https://saimouli3.github.io/xtxt/> loads and the demo renders
 - [ ] README badges are all green, no 404s
 - [ ] VS Code extension published (or the README says "install from source")
@@ -65,9 +67,11 @@ Show HN: A document format that is readable in cat and parseable by an agent
 > where the new thing was. That is what makes it safe to extend.
 >
 > There is a spec, a Go reference implementation, ports in Python, JavaScript,
-> Rust, Java and C, and a conformance suite of fixtures all six are held to —
-> a seventh implementation joins by passing that directory. The C library
-> doubles as an FFI substrate, so anything that can call C can read XTXT.
+> Rust, Java, C and C++, and a conformance suite of ten fixtures all of them
+> are held to — an eighth implementation joins by passing that directory. A
+> parser that passes it is roughly 600–900 lines in most languages. The C
+> library doubles as an FFI substrate, so anything that can call C can read
+> XTXT.
 >
 > There is also an MCP server, so if you use Claude Code or similar, your agent
 > can read a folder of these today: `npx xtxt-mcp ./notes` gives it tools for
@@ -85,6 +89,22 @@ Show HN: A document format that is readable in cat and parseable by an agent
 **Timing:** Tuesday–Thursday, 9–10am ET. Avoid Fridays and weekends.
 
 ---
+
+## Claims you must not make
+
+Checked against the registries on 2026-07-29. Getting caught on one of these
+costs more than any of them are worth.
+
+- **Do not say `cargo add xtxt` or quote Maven coordinates.** Neither is
+  published. Say "Rust and Java ports are in the repo; build from source."
+- **Do not say images live "inside the file" unqualified.** `@image(src="a.png")`
+  is a reference, exactly like Markdown. Embedding needs a `data:` URI. The
+  honest line is "images can be embedded inline, which Markdown makes painful."
+- **Do not say "implementable in an afternoon."** The spec is 404 lines but a
+  conformance-passing parser is 600–900. Say "a day" or just quote the number.
+- **Do not imply anyone else uses it.** Nobody does yet. "I built this and I am
+  looking for holes in the design" is a stronger opening than a growth claim
+  a two-minute check disproves.
 
 ## Answers to the questions you will definitely get
 
@@ -137,8 +157,9 @@ last; it's high volume, low conversion, and hostile to new formats.
 > **Notes that keep images inside the file, and still diff in git**
 >
 > I got tired of my vault being a folder of `.md` plus a folder of loose PNGs
-> where half the links eventually break. So I wrote a format where the image,
-> the table, the chart and the task metadata all live in the one text file.
+> where half the links eventually break. So I wrote a format where tables,
+> charts and task metadata live in the text file itself — and images can too,
+> as data: URIs, if you want a document that is genuinely one file.
 >
 > [demo gif or screenshot]
 >

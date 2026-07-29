@@ -1,7 +1,8 @@
 # XTXT for Obsidian
 
-Open, read and edit `.xtxt` documents in your vault: images, tables, charts and
-typed records in one plain-text file that still opens in any editor.
+Open, read and edit `.xtxt` documents in your vault: tables, charts and typed
+records in one plain-text file that still opens in any editor — and images
+either alongside it or embedded inline as `data:` URIs.
 
 - `.xtxt` files open in a proper view, not as unrecognised text
 - Preview and source, toggled from the pane header
