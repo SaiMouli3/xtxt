@@ -35,7 +35,7 @@
   "homepage": "https://github.com/SaiMouli3/xtxt#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "xtxt-js": "file:../../sdk/js",
+    "xtxt-js": "^0.1.0",
     "zod": "^4.4.3"
   }
 }

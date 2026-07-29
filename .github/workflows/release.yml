@@ -63,6 +63,29 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  # Publishes after npm: xtxt-mcp depends on xtxt-js at a real version, so the
+  # SDK has to exist on the registry before this can resolve.
+  npm-mcp:
+    needs: npm
+    runs-on: ubuntu-latest
+    steps:
+      - id: token
+        run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.token.outputs.present != 'true'
+        run: echo "::notice::NPM_TOKEN is not set; skipping the xtxt-mcp publish."
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+      - if: steps.token.outputs.present == 'true'
+        run: npm publish --provenance --access public
+        working-directory: integrations/mcp-server
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   crates:
     needs: test
     runs-on: ubuntu-latest

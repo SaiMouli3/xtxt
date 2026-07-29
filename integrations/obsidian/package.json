@@ -17,6 +17,6 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "xtxt-js": "file:../../sdk/js"
+    "xtxt-js": "^0.1.0"
   }
 }

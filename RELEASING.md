@@ -20,9 +20,21 @@ scripted from here.
 
    Then create the `pypi` environment under repo Settings → Environments.
 
-2. **npm token.** `npm token create --read-only=false`, then add it as the
-   repository secret `NPM_TOKEN` (Settings → Secrets → Actions). Until that
-   secret exists the npm job skips itself rather than failing the release.
+2. **npm token.** npm's granular token form is now the default. Set:
+   **Bypass two-factor authentication** (checked — CI cannot answer a one-time
+   code), **Read and write**, **All packages** (the packages do not exist yet,
+   so they cannot be selected individually), no IP ranges, Organizations set to
+   **No access**, and the longest expiry offered.
+
+   Add it as the repository secret `NPM_TOKEN` (Settings → Secrets → Actions).
+   Until that secret exists both npm jobs skip themselves rather than failing
+   the release.
+
+   **The token expires — 90 days is npm's maximum.** When it does, the npm jobs
+   go back to skipping, which looks like "not configured" rather than an error.
+   After the first release, switch both packages to npm trusted publishing
+   (GitHub OIDC, same model as the PyPI setup above) and delete the token:
+   nothing to rotate and nothing to leak.
 
    The npm package is **`xtxt-js`**, not `xtxt`: the bare name is held by an
    abandoned v0.0.0 placeholder published in 2022. PyPI and the Go module use
@@ -53,7 +65,8 @@ Go needs nothing: the module proxy picks up tags automatically.
 ```sh
 # 1. bump the version everywhere
 vim sdk/python/pyproject.toml sdk/js/package.json \
-    sdk/rust/Cargo.toml sdk/java/pom.xml           # version = X.Y.Z
+    sdk/rust/Cargo.toml sdk/java/pom.xml \
+    integrations/mcp-server/package.json           # version = X.Y.Z
 
 # 2. confirm all five implementations agree
 go test ./... \
@@ -69,8 +82,14 @@ git push origin main --tags
 ```
 
 The `release` workflow re-runs CI, then publishes the GitHub release, the PyPI
-wheel, the npm package and the crate. A failed test blocks all of them. Maven
+wheel, both npm packages and the crate. A failed test blocks all of them. Maven
 Central is still manual (see above).
+
+`xtxt-mcp` publishes after `xtxt-js` because it depends on it at a real
+version. Locally that dependency resolves through npm workspaces — the root
+`package.json` links `sdk/js` to whatever needs it — so `npm install` at the
+repo root sets up the SDK, the MCP server and the Obsidian plugin at once, and
+none of them need the package to exist on the registry yet.
 
 ## Versioning
 

@@ -1,0 +1,15 @@
+{
+  "name": "xtxt-repo",
+  "private": true,
+  "description": "Workspace root: links the JavaScript SDK to the integrations that depend on it",
+  "workspaces": [
+    "sdk/js",
+    "integrations/mcp-server",
+    "integrations/obsidian"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "license": "MIT"
+}

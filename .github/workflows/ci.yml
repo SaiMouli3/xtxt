@@ -103,8 +103,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Installed from the workspace root so xtxt-js resolves to the sibling
+      # rather than needing to already exist on npm.
       - run: npm install
-        working-directory: integrations/mcp-server
       - run: node --test --test-timeout=30000 test.js
         working-directory: integrations/mcp-server
 
@@ -116,7 +117,6 @@ jobs:
         with:
           node-version: "22"
       - run: npm install
-        working-directory: integrations/obsidian
       - run: npm run build
         working-directory: integrations/obsidian
 
