@@ -82,15 +82,26 @@ static char *buf_take(buf *b) {
   return out;
 }
 
+/*
+ * Formats into a fresh allocation. It measures into a stack buffer rather than
+ * using the vsnprintf(NULL, 0, ...) idiom: that is valid C99, but glibc's
+ * fortified vsnprintf makes GCC reject it under -Werror, and every diagnostic
+ * this builds fits in the buffer anyway.
+ */
 static char *xasprintf(const char *fmt, ...) {
+  char stack[256];
   va_list ap, ap2;
   va_start(ap, fmt);
   va_copy(ap2, ap);
-  int n = vsnprintf(NULL, 0, fmt, ap);
+  int n = vsnprintf(stack, sizeof stack, fmt, ap);
   va_end(ap);
   if (n < 0) {
     va_end(ap2);
     return xstrdup("");
+  }
+  if ((size_t)n < sizeof stack) {
+    va_end(ap2);
+    return xstrndup(stack, (size_t)n);
   }
   char *out = xmalloc((size_t)n + 1);
   vsnprintf(out, (size_t)n + 1, fmt, ap2);

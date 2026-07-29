@@ -19,6 +19,10 @@
 #define XTXT_HPP
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <optional>
