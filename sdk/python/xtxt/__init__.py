@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "Arg", "Item", "Node", "Document", "Issue", "Result",
     "parse", "parse_file", "validate", "extract", "canonical",

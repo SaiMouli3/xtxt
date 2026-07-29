@@ -1,6 +1,6 @@
 {
   "name": "xtxt-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server exposing XTXT documents to agents as structure rather than prose",
   "type": "module",
   "bin": {
@@ -35,7 +35,7 @@
   "homepage": "https://github.com/SaiMouli3/xtxt#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "xtxt-js": "^0.1.0",
+    "xtxt-js": "^0.1.1",
     "zod": "^4.4.3"
   }
 }
