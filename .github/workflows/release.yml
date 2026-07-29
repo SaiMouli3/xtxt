@@ -45,6 +45,11 @@ jobs:
     # Skipped until NPM_TOKEN exists, so a release is never red for a reason
     # that has nothing to do with the code. See RELEASING.md.
     if: ${{ github.repository == 'SaiMouli3/xtxt' }}
+    permissions:
+      contents: read
+      # --provenance signs the package with a GitHub OIDC token; without this
+      # npm fails with EUSAGE before it uploads anything.
+      id-token: write
     steps:
       - id: token
         run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
@@ -68,6 +73,9 @@ jobs:
   npm-mcp:
     needs: npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - id: token
         run: echo "present=${{ secrets.NPM_TOKEN != '' }}" >> "$GITHUB_OUTPUT"

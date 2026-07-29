@@ -1,6 +1,6 @@
 {
   "name": "xtxt-js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parser and renderer for the XTXT plain-text document format",
   "type": "module",
   "main": "xtxt.js",

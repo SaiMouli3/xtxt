@@ -1,6 +1,6 @@
 {
   "name": "xtxt-obsidian",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Obsidian plugin for the XTXT document format",
   "type": "module",
@@ -17,6 +17,6 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "xtxt-js": "^0.1.1"
+    "xtxt-js": "^0.1.2"
   }
 }

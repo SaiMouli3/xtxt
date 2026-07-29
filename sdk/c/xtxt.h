@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#define XTXT_VERSION "0.1.1"
+#define XTXT_VERSION "0.1.2"
 
 /* The type of a node. */
 typedef enum {

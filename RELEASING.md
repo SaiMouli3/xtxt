@@ -91,6 +91,16 @@ version. Locally that dependency resolves through npm workspaces — the root
 repo root sets up the SDK, the MCP server and the Obsidian plugin at once, and
 none of them need the package to exist on the registry yet.
 
+## When a release half-succeeds
+
+Publishing is per-registry, so one failed job can leave a version on PyPI and
+crates.io but not on npm — that is what happened to v0.1.1.
+
+**Fix the cause, bump the version, tag again.** Do not re-point the old tag:
+PyPI and crates.io both reject a version that already exists, so the re-run
+would fail for a new reason. A skipped version number costs nothing; a release
+process that needs manual cleanup costs every time.
+
 ## Versioning
 
 The **specification** and the **implementations** version separately. A spec

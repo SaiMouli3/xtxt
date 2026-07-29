@@ -162,7 +162,7 @@ spec, shows every paragraph, and shows a placeholder where the new thing was.
 | Python | `sdk/python` | `pip install xtxt` |
 | JavaScript | `sdk/js` | `npm install xtxt-js` |
 | Rust | `sdk/rust` | `cargo add xtxt` |
-| Java | `sdk/java` | `io.github.saimouli3:xtxt:0.1.1` |
+| Java | `sdk/java` | `io.github.saimouli3:xtxt:0.1.2` |
 | C | `sdk/c` | `make` — C99, no dependencies |
 | C++ | `sdk/cpp` | `cmake` — C++17, wraps the C library |
 

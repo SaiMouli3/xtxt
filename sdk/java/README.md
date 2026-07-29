@@ -8,7 +8,7 @@ No runtime dependencies, Java 17+.
 <dependency>
   <groupId>io.github.saimouli3</groupId>
   <artifactId>xtxt</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
 </dependency>
 ```
 
