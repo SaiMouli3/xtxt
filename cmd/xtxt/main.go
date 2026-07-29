@@ -22,6 +22,7 @@ usage:
   xtxt import <file.md>            convert Markdown to XTXT
   xtxt ast <file>                  print the parse tree as JSON
   xtxt extract <file>              print the machine-facing view as JSON
+  xtxt paste <file>                append the clipboard image to a document
 
 formats:
   html   standalone HTML document
@@ -29,6 +30,11 @@ formats:
   md     CommonMark
   text   plain text
   json   parse tree
+
+paste options:
+  --embed             write the image into the document as a data: URI
+  --caption <text>    caption for the pasted image
+  --width <n>         width attribute for the pasted image
 
 options:
   --resolve    expand @include and @embed before rendering
@@ -48,9 +54,9 @@ func main() {
 		os.Exit(2)
 	}
 
-	var out, pluginPath string
+	var out, pluginPath, caption, imgWidth string
 	var width = 80
-	var mermaid, noColor, resolve bool
+	var mermaid, noColor, resolve, embed bool
 	var rest []string
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -68,6 +74,18 @@ func main() {
 			mermaid = true
 		case "--resolve":
 			resolve = true
+		case "--embed":
+			embed = true
+		case "--caption":
+			i++
+			if i < len(args) {
+				caption = args[i]
+			}
+		case "--width":
+			i++
+			if i < len(args) {
+				imgWidth = args[i]
+			}
 		case "--plugins":
 			i++
 			if i < len(args) {
@@ -110,6 +128,15 @@ func main() {
 		emit(out, render(one(files), "json", opts))
 	case "extract":
 		emit(out, render(one(files), "extract", opts))
+	case "paste":
+		doc := one(files)
+		directive, err := pasteImage(doc, pasteOptions{
+			Embed: embed, Caption: caption, Width: imgWidth,
+		})
+		if err != nil {
+			die(err.Error())
+		}
+		fmt.Fprintf(os.Stderr, "%s: appended\n%s\n", display(doc), directive)
 	default:
 		die("unknown command " + cmd)
 	}

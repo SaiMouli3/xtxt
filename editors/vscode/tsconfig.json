@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    // esbuild bundles xtxt-js (ESM) into a CJS extension, so type resolution
+    // should follow the bundler rather than Node's CJS rules.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowJs": true
+  },
+  "include": ["src/**/*.ts"]
+}

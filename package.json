@@ -5,7 +5,8 @@
   "workspaces": [
     "sdk/js",
     "integrations/mcp-server",
-    "integrations/obsidian"
+    "integrations/obsidian",
+    "editors/vscode"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",

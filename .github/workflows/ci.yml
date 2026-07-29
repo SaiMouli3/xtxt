@@ -120,6 +120,22 @@ jobs:
       - run: npm run build
         working-directory: integrations/obsidian
 
+  vscode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+        working-directory: editors/vscode
+      - run: npx tsc --noEmit
+        working-directory: editors/vscode
+      - run: npm run build
+        working-directory: editors/vscode
+      - run: npx --yes @vscode/vsce package --out /tmp/xtxt.vsix
+        working-directory: editors/vscode
+
   packaging:
     runs-on: ubuntu-latest
     steps:

@@ -22,11 +22,28 @@ interface XtxtSettings {
   defaultMode: Mode;
   /** Show parser warnings above the document. */
   showIssues: boolean;
+  /**
+   * Embed pasted images as data: URIs instead of saving them to the vault.
+   * Self-contained, but roughly 33% larger and it makes diffs unreadable.
+   */
+  embedPastedImages: boolean;
+  /** Vault folder for pasted images; empty means beside the document. */
+  attachmentFolder: string;
 }
 
 const DEFAULT_SETTINGS: XtxtSettings = {
   defaultMode: 'preview',
   showIssues: true,
+  embedPastedImages: false,
+  attachmentFolder: '',
+};
+
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
 };
 
 /**
@@ -89,12 +106,49 @@ export class XtxtView extends TextFileView {
       this.data = this.editorEl.value;
       this.requestSave();
     });
+    this.editorEl.addEventListener('paste', (event) => void this.onPaste(event));
 
     this.addAction(
       'eye',
       'Toggle preview and source',
       () => this.toggleMode(),
     );
+    this.render();
+  }
+
+  /**
+   * Paste an image at the cursor. Obsidian hands us the bytes, so the image is
+   * written into the vault and the directive inserted where you were typing —
+   * and because the preview renders the same HTML the CLI does, switching back
+   * shows the picture in place.
+   */
+  private async onPaste(event: ClipboardEvent): Promise<void> {
+    const items = Array.from(event.clipboardData?.items ?? []);
+    const image = items.find((i) => i.kind === 'file' && i.type.startsWith('image/'));
+    if (!image) return;             // ordinary text paste: leave it alone
+    event.preventDefault();
+
+    const file = image.getAsFile();
+    if (!file) return;
+
+    try {
+      const directive = await this.plugin.storeImage(
+        await file.arrayBuffer(), file.type, this.file?.parent?.path ?? '',
+        this.file?.basename ?? 'image');
+      this.insertAtCursor(directive);
+    } catch (err) {
+      new Notice(`Could not paste the image: ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
+  private insertAtCursor(text: string): void {
+    const start = this.editorEl.selectionStart ?? this.editorEl.value.length;
+    const end = this.editorEl.selectionEnd ?? start;
+    const value = this.editorEl.value;
+    this.editorEl.value = value.slice(0, start) + text + value.slice(end);
+    this.editorEl.selectionStart = this.editorEl.selectionEnd = start + text.length;
+    this.data = this.editorEl.value;
+    this.requestSave();
     this.render();
   }
 
@@ -179,6 +233,42 @@ export default class XtxtPlugin extends Plugin {
         return true;
       },
     });
+  }
+
+  /**
+   * Write a pasted image and return the directive that references it.
+   * Saving into the vault keeps the document small and the diff readable;
+   * embedding makes it self-contained at about 33% size overhead.
+   */
+  async storeImage(bytes: ArrayBuffer, mime: string, docDir: string,
+                   stem: string): Promise<string> {
+    if (this.settings.embedPastedImages) {
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+      return `@image(src="data:${mime};base64,${base64}")\n`;
+    }
+
+    const ext = IMAGE_EXTENSIONS[mime] ?? 'png';
+    const folder = this.settings.attachmentFolder.trim();
+    const dir = folder || docDir;
+    if (folder && !this.app.vault.getAbstractFileByPath(normalizePath(folder))) {
+      await this.app.vault.createFolder(normalizePath(folder));
+    }
+
+    let name = '';
+    for (let i = 1; i < 10000; i++) {
+      const candidate = normalizePath(dir ? `${dir}/${stem}-${i}.${ext}` : `${stem}-${i}.${ext}`);
+      if (!this.app.vault.getAbstractFileByPath(candidate)) {
+        name = candidate;
+        break;
+      }
+    }
+    if (!name) throw new Error('could not find an unused filename');
+
+    await this.app.vault.createBinary(name, bytes);
+    // Reference it relative to the document when they share a folder, so the
+    // file stays portable outside the vault.
+    const relative = dir === docDir ? name.split('/').pop()! : name;
+    return `@image(src="${relative}")\n`;
   }
 
   /** A short report of what an agent would receive from `xtxt extract`. */

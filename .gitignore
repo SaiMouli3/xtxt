@@ -15,3 +15,5 @@ sdk/java/target/
 sdk/rust/Cargo.lock
 sdk/c/build/
 sdk/cpp/build/
+editors/vscode/out/
+editors/vscode/*.vsix

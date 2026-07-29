@@ -1,22 +1,45 @@
 # XTXT for VS Code
 
-Syntax highlighting, folding and comment toggling for the
+Syntax highlighting, live preview and image pasting for the
 [XTXT](https://github.com/SaiMouli3/xtxt) plain-text document format.
 
-- Directives, records and inline formatting highlighted
-- `@code(language="…")` blocks highlighted in their own language
-- Folding on `@block` / `@endblock`
-- `@comment` / `@endcomment` toggling with the usual comment shortcut
+## Features
 
-## Try the format
+- **Live preview** — `Cmd+K V` (`Ctrl+K V`) opens a panel beside the editor
+  that re-renders as you type, with records as cards, charts as inline SVG and
+  images resolved relative to the document
+- **Paste an image** — `Cmd+V` with an image on the clipboard saves it next to
+  the document and inserts the `@image` directive. `Cmd+Alt+V` forces it when
+  the platform does not surface the image to VS Code
+- **Syntax highlighting**, with `@code(language="…")` blocks highlighted in
+  their own language
+- **Folding** on `@block` / `@endblock`, and `@comment` toggling
+- **Diagnostics** shown above the preview; unknown directives are warnings,
+  never errors
 
-<https://saimouli3.github.io/xtxt/>
+VS Code cannot draw images inline in a text editor — no extension API exposes
+that — so the preview panel is where you see them, the same way Markdown works.
+
+## Settings
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `xtxt.paste.embed` | `false` | Embed pasted images as `data:` URIs instead of saving them beside the document. Self-contained, ~33% larger, and it makes git diffs unreadable. |
+| `xtxt.paste.folder` | `""` | Folder for pasted images, relative to the document. Empty means beside it. |
 
 ## Install from source
 
 ```sh
 git clone https://github.com/SaiMouli3/xtxt
-ln -s "$PWD/xtxt/editors/vscode" ~/.vscode/extensions/xtxt
+cd xtxt/editors/vscode
+npm install && npm run build
+npx @vscode/vsce package
+code --install-extension xtxt-*.vsix
 ```
 
-Reload VS Code and open any `.xtxt` file.
+The preview renders with the same JavaScript SDK as the CLI's HTML export and
+the browser demo, so what you see here and what `xtxt export … html` produces
+cannot drift apart.
+
+[Specification](https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md) ·
+[Live demo](https://saimouli3.github.io/xtxt/)
