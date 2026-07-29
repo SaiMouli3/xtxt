@@ -14,6 +14,8 @@ Run it:
 go test ./...                        # regenerate: go test -run TestConformance -update
 cd sdk/python && python -m pytest
 cd sdk/js     && node --test
+cd sdk/rust   && cargo test
+cd sdk/java   && mvn test
 ```
 
 To add an implementation, read every `*.xtxt` here, produce the same two

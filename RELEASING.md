@@ -29,16 +29,38 @@ scripted from here.
    plain `xtxt`. If npm ever releases the name, that is a rename, not a
    silent retag.
 
+3. **crates.io token.** `cargo login`, then create a token at
+   <https://crates.io/settings/tokens> scoped to publish-new and publish-update,
+   and add it as the repository secret `CARGO_REGISTRY_TOKEN`. Like npm, the job
+   skips itself when the secret is absent.
+
+4. **Maven Central** is manual for now, because it needs a GPG key and a Central
+   Portal namespace verification that cannot be scripted from here. Once
+   `io.github.saimouli3` is verified at <https://central.sonatype.com>:
+
+   ```sh
+   gpg --gen-key                        # once
+   cd sdk/java && mvn -P release deploy
+   ```
+
+   Wiring that into `release.yml` is worth doing after the first manual publish
+   proves the credentials work — not before.
+
 Go needs nothing: the module proxy picks up tags automatically.
 
 ## Cutting a release
 
 ```sh
-# 1. bump the version in both SDKs
-vim sdk/python/pyproject.toml sdk/js/package.json   # version = X.Y.Z
+# 1. bump the version everywhere
+vim sdk/python/pyproject.toml sdk/js/package.json \
+    sdk/rust/Cargo.toml sdk/java/pom.xml           # version = X.Y.Z
 
-# 2. confirm all three implementations agree
-go test ./... && (cd sdk/python && python -m pytest -q) && (cd sdk/js && node --test)
+# 2. confirm all five implementations agree
+go test ./... \
+  && (cd sdk/python && python -m pytest -q) \
+  && (cd sdk/js     && node --test) \
+  && (cd sdk/rust   && cargo test) \
+  && (cd sdk/java   && mvn -B test)
 
 # 3. tag and push
 git commit -am "Release vX.Y.Z"
@@ -47,7 +69,8 @@ git push origin main --tags
 ```
 
 The `release` workflow re-runs CI, then publishes the GitHub release, the PyPI
-wheel and the npm package. A failed test blocks all three.
+wheel, the npm package and the crate. A failed test blocks all of them. Maven
+Central is still manual (see above).
 
 ## Versioning
 

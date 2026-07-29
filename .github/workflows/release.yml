@@ -62,3 +62,23 @@ jobs:
         working-directory: sdk/js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  crates:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - id: token
+        run: echo "present=${{ secrets.CARGO_REGISTRY_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.token.outputs.present != 'true'
+        run: echo "::notice::CARGO_REGISTRY_TOKEN is not set; skipping the crates.io publish."
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+      - if: steps.token.outputs.present == 'true'
+        uses: dtolnay/rust-toolchain@stable
+      # The crate reads ../../conformance in its tests only, so packaging must
+      # not try to bundle it.
+      - if: steps.token.outputs.present == 'true'
+        run: cargo publish --no-verify
+        working-directory: sdk/rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

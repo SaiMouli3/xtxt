@@ -40,6 +40,32 @@ jobs:
       - run: node --test
         working-directory: sdk/js
 
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+        working-directory: sdk/rust
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: sdk/rust
+      - run: cargo test
+        working-directory: sdk/rust
+
+  java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - run: mvn -B test
+        working-directory: sdk/java
+
   # Build the distributables and prove they actually contain the code. An
   # earlier wheel shipped empty because hatchling read the repo's .gitignore
   # relative to sdk/python and excluded the package; the tests all passed,

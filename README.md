@@ -161,6 +161,8 @@ spec, shows every paragraph, and shows a placeholder where the new thing was.
 | Go | this module | `go get github.com/SaiMouli3/xtxt` |
 | Python | `sdk/python` | `pip install xtxt` |
 | JavaScript | `sdk/js` | `npm install xtxt-js` |
+| Rust | `sdk/rust` | `cargo add xtxt` |
+| Java | `sdk/java` | `io.github.saimouli3:xtxt:0.1.0` |
 
 ```python
 import xtxt
@@ -181,15 +183,18 @@ because all three run the same fixtures in `conformance/`:
 ```sh
 go test ./...                      # regenerate with -update
 cd sdk/python && python -m pytest
-cd sdk/js && node --test
+cd sdk/js     && node --test
+cd sdk/rust   && cargo test
+cd sdk/java   && mvn test
 ```
 
 A fourth implementation joins the standard by passing that directory. Each case
 is a `.xtxt` file and the normalised AST plus diagnostics it must produce.
 
-The Python and JavaScript SDKs cover parsing, validation, extraction and HTML.
-Terminal, Markdown and chart rendering live in the Go CLI; port them if you
-need them in-process.
+Every SDK covers parsing, validation, extraction and HTML. Charts are in Go and
+JavaScript; terminal and Markdown rendering, `@include` resolution and plugins
+live in Go only. Port what you need — the conformance suite tells you whether
+you got the core right.
 
 ## Editor support
 
@@ -208,7 +213,7 @@ Built and tested:
 - records, charts, footnotes, `@include`/`@embed`, and a declarative plugin system
 - a Markdown importer
 - the CLI
-- SDKs for Python and JavaScript, held to a shared conformance suite
+- SDKs for Python, JavaScript, Rust and Java, all held to one conformance suite
 - a VS Code syntax extension
 
 Not built: a desktop editor, a language server, a PDF engine, DOCX/EPUB/PPTX

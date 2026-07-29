@@ -11,6 +11,7 @@ that lands on an uninstallable repo converts nobody.
 - [ ] `pip install xtxt` works
 - [ ] `npm install xtxt-js` works
 - [ ] `go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest` works
+- [ ] `cargo add xtxt` works
 - [ ] <https://saimouli3.github.io/xtxt/> loads and the demo renders
 - [ ] README badges are all green, no 404s
 - [ ] VS Code extension published (or the README says "install from source")
@@ -63,9 +64,9 @@ Show HN: A document format that is readable in cat and parseable by an agent
 > later version of the spec, renders every paragraph, and shows a placeholder
 > where the new thing was. That is what makes it safe to extend.
 >
-> There is a spec, a Go reference implementation, Python and JavaScript ports,
-> and a conformance suite of fixtures all three are held to — a fourth
-> implementation joins by passing that directory. It is MIT.
+> There is a spec, a Go reference implementation, ports in Python, JavaScript,
+> Rust and Java, and a conformance suite of fixtures all five are held to — a
+> sixth implementation joins by passing that directory. It is MIT.
 >
 > Live demo (runs entirely in your browser): https://saimouli3.github.io/xtxt/
 > Repo: https://github.com/SaiMouli3/xtxt
@@ -157,8 +158,8 @@ Thread, one idea per post, visual on the first:
    to an agent as JSON instead of making it infer them. [side-by-side]
 4. Unknown directives are a warning, never an error. A reader from today stays
    useful on a document written tomorrow.
-5. Spec, Go reference implementation, Python + JS ports, conformance suite all
-   three pass. MIT. [link]
+5. Spec, Go reference implementation, ports in Python, JS, Rust and Java, one
+   conformance suite all five pass. MIT. [link]
 
 ---
 
@@ -183,7 +184,7 @@ than a bigger first one.
 ## What success looks like
 
 Be realistic so you don't read a normal outcome as failure. For a solo format
-with a spec and three implementations:
+with a spec and five implementations:
 
 - **Good day one:** 200–800 GitHub stars, front page of HN for a few hours,
   30–50 comments, a handful of genuinely useful design critiques.

@@ -10,3 +10,6 @@ node_modules/
 *.egg-info/
 sdk/python/dist/
 sdk/js/*.tgz
+sdk/rust/target/
+sdk/java/target/
+sdk/rust/Cargo.lock

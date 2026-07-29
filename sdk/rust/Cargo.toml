@@ -1,0 +1,20 @@
+[package]
+name = "xtxt"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Parser, validator and extractor for the XTXT plain-text document format"
+license = "MIT"
+repository = "https://github.com/SaiMouli3/xtxt"
+homepage = "https://saimouli3.github.io/xtxt/"
+documentation = "https://docs.rs/xtxt"
+keywords = ["xtxt", "document", "format", "parser", "markdown"]
+categories = ["parser-implementations", "text-processing"]
+readme = "README.md"
+
+# No runtime dependencies. serde_json is used only by the conformance test,
+# which has to read the shared fixtures.
+[dependencies]
+
+[dev-dependencies]
+serde_json = "1"
