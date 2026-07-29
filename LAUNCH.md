@@ -65,8 +65,10 @@ Show HN: A document format that is readable in cat and parseable by an agent
 > where the new thing was. That is what makes it safe to extend.
 >
 > There is a spec, a Go reference implementation, ports in Python, JavaScript,
-> Rust and Java, and a conformance suite of fixtures all five are held to — a
-> sixth implementation joins by passing that directory. It is MIT.
+> Rust, Java and C, and a conformance suite of fixtures all six are held to —
+> a seventh implementation joins by passing that directory. The C library
+> doubles as an FFI substrate, so anything that can call C can read XTXT. It
+> is MIT.
 >
 > Live demo (runs entirely in your browser): https://saimouli3.github.io/xtxt/
 > Repo: https://github.com/SaiMouli3/xtxt
@@ -158,8 +160,8 @@ Thread, one idea per post, visual on the first:
    to an agent as JSON instead of making it infer them. [side-by-side]
 4. Unknown directives are a warning, never an error. A reader from today stays
    useful on a document written tomorrow.
-5. Spec, Go reference implementation, ports in Python, JS, Rust and Java, one
-   conformance suite all five pass. MIT. [link]
+5. Spec, Go reference implementation, ports in Python, JS, Rust, Java and C,
+   one conformance suite all six pass. MIT. [link]
 
 ---
 
@@ -184,7 +186,7 @@ than a bigger first one.
 ## What success looks like
 
 Be realistic so you don't read a normal outcome as failure. For a solo format
-with a spec and five implementations:
+with a spec and six implementations:
 
 - **Good day one:** 200–800 GitHub stars, front page of HN for a few hours,
   30–50 comments, a handful of genuinely useful design critiques.

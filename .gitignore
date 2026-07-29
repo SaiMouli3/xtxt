@@ -13,3 +13,5 @@ sdk/js/*.tgz
 sdk/rust/target/
 sdk/java/target/
 sdk/rust/Cargo.lock
+sdk/c/build/
+sdk/cpp/build/

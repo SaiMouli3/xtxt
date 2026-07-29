@@ -70,6 +70,30 @@ jobs:
   # earlier wheel shipped empty because hatchling read the repo's .gitignore
   # relative to sdk/python and excluded the package; the tests all passed,
   # because they import from the source tree rather than the artifact.
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test
+        working-directory: sdk/c
+      # C is the one implementation where a bug is a memory-safety bug, so the
+      # sanitizers are part of the test story rather than an optional extra.
+      # LeakSanitizer is on by default with ASan on Linux, which is why this
+      # job matters more than the local run.
+      - run: make asan
+        working-directory: sdk/c
+
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        working-directory: sdk/cpp
+      - run: cmake --build build
+        working-directory: sdk/cpp
+      - run: ctest --test-dir build --output-on-failure
+        working-directory: sdk/cpp
+
   packaging:
     runs-on: ubuntu-latest
     steps:

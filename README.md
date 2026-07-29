@@ -163,6 +163,8 @@ spec, shows every paragraph, and shows a placeholder where the new thing was.
 | JavaScript | `sdk/js` | `npm install xtxt-js` |
 | Rust | `sdk/rust` | `cargo add xtxt` |
 | Java | `sdk/java` | `io.github.saimouli3:xtxt:0.1.0` |
+| C | `sdk/c` | `make` — C99, no dependencies |
+| C++ | `sdk/cpp` | `cmake` — C++17, wraps the C library |
 
 ```python
 import xtxt
@@ -186,15 +188,23 @@ cd sdk/python && python -m pytest
 cd sdk/js     && node --test
 cd sdk/rust   && cargo test
 cd sdk/java   && mvn test
+cd sdk/c      && make test        # and `make asan`
+cd sdk/cpp    && cmake -S . -B build && cmake --build build && ctest --test-dir build
 ```
 
 A fourth implementation joins the standard by passing that directory. Each case
 is a `.xtxt` file and the normalised AST plus diagnostics it must produce.
 
-Every SDK covers parsing, validation, extraction and HTML. Charts are in Go and
-JavaScript; terminal and Markdown rendering, `@include` resolution and plugins
-live in Go only. Port what you need — the conformance suite tells you whether
-you got the core right.
+Every SDK covers parsing and validation. Extraction and HTML are everywhere
+except C, which stops at the parser and hands the rest to the C++ wrapper —
+C has no string type worth inventing an ownership convention for. Charts are
+in Go and JavaScript; terminal and Markdown rendering, `@include` resolution
+and plugins live in Go only.
+
+C++ is a wrapper over C rather than a seventh parser: one parser means the two
+cannot disagree about the format. The C library is also the FFI substrate —
+anything that can call C can read XTXT without a new implementation, which is
+the cheapest way to reach Ruby, PHP, Lua, Zig or Swift.
 
 ## Editor support
 
@@ -213,7 +223,7 @@ Built and tested:
 - records, charts, footnotes, `@include`/`@embed`, and a declarative plugin system
 - a Markdown importer
 - the CLI
-- SDKs for Python, JavaScript, Rust and Java, all held to one conformance suite
+- SDKs for Python, JavaScript, Rust, Java, C and C++, all held to one conformance suite
 - a VS Code syntax extension
 
 Not built: a desktop editor, a language server, a PDF engine, DOCX/EPUB/PPTX
