@@ -67,8 +67,13 @@ Show HN: A document format that is readable in cat and parseable by an agent
 > There is a spec, a Go reference implementation, ports in Python, JavaScript,
 > Rust, Java and C, and a conformance suite of fixtures all six are held to —
 > a seventh implementation joins by passing that directory. The C library
-> doubles as an FFI substrate, so anything that can call C can read XTXT. It
-> is MIT.
+> doubles as an FFI substrate, so anything that can call C can read XTXT.
+>
+> There is also an MCP server, so if you use Claude Code or similar, your agent
+> can read a folder of these today: `npx xtxt-mcp ./notes` gives it tools for
+> tasks, decisions and search across the whole set. That is the part I would
+> most like feedback on — whether the record idea earns its keep in practice.
+> It is MIT.
 >
 > Live demo (runs entirely in your browser): https://saimouli3.github.io/xtxt/
 > Repo: https://github.com/SaiMouli3/xtxt
@@ -169,15 +174,17 @@ Thread, one idea per post, visual on the first:
 
 Announcements spike and decay. Pull comes from integrations:
 
-- **Obsidian plugin** — highest value. That community maps directly onto
-  records, and it's the audience that already wanted this.
-- **MCP server** wrapping `xtxt extract` — makes every agent an XTXT reader
-  with no per-agent work.
+- ~~**Obsidian plugin**~~ — built, in `integrations/obsidian`. Needs submitting
+  to the community plugin directory, which is a PR to `obsidianmd/obsidian-releases`
+  and a review queue measured in weeks. Start it early.
+- ~~**MCP server**~~ — built, in `integrations/mcp-server`. Publish it to npm
+  alongside `xtxt-js` and it becomes the strongest single line in the Show HN
+  post: not "here is a format" but "your agent can read it now".
 - **linguist / Pygments lexer** — GitHub colouring `.xtxt` files is free
   credibility on every repo that contains one.
 - **Pandoc writer** — puts XTXT in the conversion graph everyone already uses.
 
-Pick one and ship it a few weeks after launch, when the first wave has
+Ship the remaining two a few weeks after launch, when the first wave has
 decayed. A second, smaller wave from "XTXT now works in X" compounds better
 than a bigger first one.
 

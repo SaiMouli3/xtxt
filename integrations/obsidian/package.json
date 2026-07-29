@@ -1,0 +1,22 @@
+{
+  "name": "xtxt-obsidian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Obsidian plugin for the XTXT document format",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "test": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "obsidian": "^1.7.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "xtxt-js": "file:../../sdk/js"
+  }
+}

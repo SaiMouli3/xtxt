@@ -206,6 +206,30 @@ cannot disagree about the format. The C library is also the FFI substrate —
 anything that can call C can read XTXT without a new implementation, which is
 the cheapest way to reach Ruby, PHP, Lua, Zig or Swift.
 
+## Integrations
+
+### MCP server — XTXT for agents
+
+```sh
+npx xtxt-mcp /path/to/notes
+```
+
+Seven tools over a document root: list, extract, search, validate, render, and
+two that are the point — `xtxt_tasks` collects every task across every document
+with owner and due date, and `xtxt_records` collects every `@decision`,
+`@knowledge`, or record type nobody has invented yet. All of it a parse, not an
+inference. See [integrations/mcp-server](integrations/mcp-server).
+
+Paths are confined to the root you pass: exposing a document reader to an agent
+must not become a way to read the whole filesystem.
+
+### Obsidian plugin
+
+`.xtxt` files open in a proper view with preview and source, records rendered
+as cards, charts as inline SVG themed by your vault, and relative image sources
+resolved against the document's folder. See
+[integrations/obsidian](integrations/obsidian).
+
 ## Editor support
 
 `editors/vscode/` is a VS Code extension providing syntax highlighting, code
@@ -224,6 +248,8 @@ Built and tested:
 - a Markdown importer
 - the CLI
 - SDKs for Python, JavaScript, Rust, Java, C and C++, all held to one conformance suite
+- an MCP server, so any agent reads XTXT structure today
+- an Obsidian plugin
 - a VS Code syntax extension
 
 Not built: a desktop editor, a language server, a PDF engine, DOCX/EPUB/PPTX

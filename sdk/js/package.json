@@ -5,11 +5,15 @@
   "type": "module",
   "main": "xtxt.js",
   "exports": {
-    ".": "./xtxt.js"
+    ".": {
+      "types": "./xtxt.d.ts",
+      "default": "./xtxt.js"
+    }
   },
   "files": [
     "xtxt.js",
     "chart.js",
+    "xtxt.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -31,5 +35,6 @@
     "type": "git",
     "url": "git+https://github.com/SaiMouli3/xtxt.git"
   },
-  "homepage": "https://github.com/SaiMouli3/xtxt#readme"
+  "homepage": "https://github.com/SaiMouli3/xtxt#readme",
+  "types": "xtxt.d.ts"
 }

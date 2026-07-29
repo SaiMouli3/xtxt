@@ -94,6 +94,32 @@ jobs:
       - run: ctest --test-dir build --output-on-failure
         working-directory: sdk/cpp
 
+  # Integrations depend on the JS SDK via a file: link, so a change that breaks
+  # the SDK's exports or types breaks these jobs before it reaches a user.
+  mcp-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+        working-directory: integrations/mcp-server
+      - run: node --test --test-timeout=30000 test.js
+        working-directory: integrations/mcp-server
+
+  obsidian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+        working-directory: integrations/obsidian
+      - run: npm run build
+        working-directory: integrations/obsidian
+
   packaging:
     runs-on: ubuntu-latest
     steps:

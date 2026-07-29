@@ -1,0 +1,140 @@
+/* XTXT plugin styles.
+ *
+ * Everything is expressed in Obsidian's own theme variables rather than fixed
+ * colours, so a document looks like the vault it lives in instead of like the
+ * standalone HTML export. */
+
+.xtxt-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.xtxt-hidden { display: none !important; }
+
+.xtxt-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--size-4-6) var(--size-4-8);
+  max-width: var(--file-line-width);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.xtxt-source {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  resize: none;
+  padding: var(--size-4-6) var(--size-4-8);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--font-text-size);
+  line-height: 1.6;
+  tab-size: 2;
+}
+.xtxt-source:focus { outline: none; }
+
+/* Diagnostics */
+.xtxt-issues:empty { display: none; }
+.xtxt-issues ul {
+  margin: 0;
+  padding: var(--size-4-2) var(--size-4-8);
+  list-style: none;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+}
+.xtxt-issue { color: var(--text-muted); }
+.xtxt-issue.xtxt-error { color: var(--text-error); }
+
+/* Document body */
+.xtxt-body h1, .xtxt-body h2, .xtxt-body h3,
+.xtxt-body h4, .xtxt-body h5, .xtxt-body h6 { color: var(--text-normal); }
+.xtxt-body blockquote {
+  border-left: 3px solid var(--quote-opening-modifier);
+  margin-left: 0;
+  padding-left: var(--size-4-4);
+  color: var(--text-muted);
+}
+.xtxt-body pre {
+  background: var(--code-background);
+  padding: var(--size-4-3);
+  border-radius: var(--radius-s);
+  overflow-x: auto;
+}
+.xtxt-body code { font-family: var(--font-monospace); }
+.xtxt-body table { border-collapse: collapse; width: 100%; }
+.xtxt-body th, .xtxt-body td {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding: var(--size-2-3) var(--size-4-2);
+  text-align: left;
+}
+.xtxt-body figure { margin: var(--size-4-6) 0; text-align: center; }
+.xtxt-body figure img, .xtxt-body figure video { max-width: 100%; border-radius: var(--radius-s); }
+.xtxt-body figcaption { color: var(--text-muted); font-size: var(--font-smaller); margin-top: var(--size-2-3); }
+.xtxt-body ul.checklist { list-style: none; padding-left: var(--size-4-2); }
+
+/* Records: @task, @decision, @knowledge, @chat and anything shaped like them */
+.xtxt-body .record {
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: var(--radius-s);
+  padding: var(--size-4-3) var(--size-4-4);
+  margin: var(--size-4-5) 0;
+  background: var(--background-primary-alt);
+}
+.xtxt-body .record-type {
+  margin: 0 0 var(--size-4-2);
+  font-size: var(--font-smallest);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.xtxt-body .record dl {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, max-content) 1fr;
+  gap: var(--size-2-2) var(--size-4-3);
+  margin: 0;
+}
+.xtxt-body .record dt { color: var(--text-muted); font-size: var(--font-smaller); }
+.xtxt-body .record dd { margin: 0; white-space: pre-wrap; }
+
+/* A directive this build has never heard of is shown, never dropped. */
+.xtxt-body .unknown {
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: var(--size-4-2) var(--size-4-3);
+  margin: var(--size-4-4) 0;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  white-space: pre-wrap;
+}
+
+/* Charts */
+.xtxt-body .xtxt-chart { display: block; max-width: 100%; }
+.xtxt-body .xtxt-chart .c-label { fill: var(--text-normal); font-size: 12px; }
+.xtxt-body .xtxt-chart .c-value { fill: var(--text-muted); font-size: 11px; }
+.xtxt-body .xtxt-chart .c-axis { fill: var(--text-faint); font-size: 10px; }
+.xtxt-body .xtxt-chart .c-grid { stroke: var(--background-modifier-border); }
+.xtxt-body .xtxt-chart .c-inbar { fill: var(--text-on-accent); font-size: 11px; font-weight: 600; }
+.xtxt-body .chart-data summary { color: var(--text-muted); cursor: pointer; font-size: var(--font-smaller); }
+.xtxt-body {
+  --chart-1: var(--color-blue);
+  --chart-2: var(--color-orange);
+  --chart-3: var(--color-green);
+  --chart-surface: var(--background-primary);
+}
+
+/* Footnotes */
+.xtxt-body .footnotes {
+  margin-top: var(--size-4-9);
+  padding-top: var(--size-4-4);
+  border-top: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
