@@ -16,25 +16,41 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
-import { extract, parse, renderHTML, validate } from 'xtxt-js';
+import { extract, parse, renderHTML, sortIssues, validate } from 'xtxt-js';
+
+import { blockRanges } from './blocks';
+import { isUnder } from './paths';
 
 const run = promisify(execFile);
 
+const SELECTOR: vscode.DocumentSelector = { language: 'xtxt' };
+
 export function activate(context: vscode.ExtensionContext): void {
   const previews = new PreviewManager(context);
+  const diagnostics = vscode.languages.createDiagnosticCollection('xtxt');
 
   context.subscriptions.push(
+    diagnostics,
     vscode.commands.registerCommand('xtxt.showPreview', () => previews.show()),
     vscode.commands.registerCommand('xtxt.pasteImage', () => pasteImage()),
 
     // Re-render as you type, not only on save: a preview that lags behind the
     // buffer is worse than no preview, because you stop trusting it.
     vscode.workspace.onDidChangeTextDocument((e) => {
-      if (e.document.languageId === 'xtxt') previews.update(e.document);
+      if (e.document.languageId !== 'xtxt') return;
+      previews.update(e.document);
+      refreshDiagnostics(e.document, diagnostics);
     }),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor?.document.languageId === 'xtxt') previews.update(editor.document);
     }),
+
+    vscode.workspace.onDidOpenTextDocument((doc) => refreshDiagnostics(doc, diagnostics)),
+    // Stale squiggles in the Problems panel outlive the editor otherwise.
+    vscode.workspace.onDidCloseTextDocument((doc) => diagnostics.delete(doc.uri)),
+
+    vscode.languages.registerDocumentSymbolProvider(SELECTOR, new SymbolProvider()),
+    vscode.languages.registerFoldingRangeProvider(SELECTOR, new FoldingProvider()),
 
     // Cmd+V with an image on the clipboard, handled where people expect it.
     vscode.languages.registerDocumentPasteEditProvider(
@@ -44,10 +60,160 @@ export function activate(context: vscode.ExtensionContext): void {
         pasteMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] },
     ),
   );
+
+  // Documents restored from the last session are already open by the time we
+  // activate, and would otherwise show nothing until their first keystroke.
+  for (const doc of vscode.workspace.textDocuments) refreshDiagnostics(doc, diagnostics);
 }
 
 export function deactivate(): void {
   /* Panels are disposed through context.subscriptions. */
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostics
+// ---------------------------------------------------------------------------
+
+const SEVERITY: Record<string, vscode.DiagnosticSeverity> = {
+  error: vscode.DiagnosticSeverity.Error,
+  warning: vscode.DiagnosticSeverity.Warning,
+};
+
+/**
+ * Surfaces what `xtxt validate` already reports, in the editor. The parser
+ * recovers from everything, so this never throws and always leaves the
+ * collection in a defined state — including empty, which clears old squiggles.
+ */
+function refreshDiagnostics(
+  document: vscode.TextDocument,
+  collection: vscode.DiagnosticCollection,
+): void {
+  if (document.languageId !== 'xtxt') return;
+
+  const res = parse(document.getText());
+  const issues = sortIssues([...res.issues, ...validate(res.doc)]);
+
+  collection.set(document.uri, issues.map((issue) => {
+    const diagnostic = new vscode.Diagnostic(
+      lineRange(document, issue.line),
+      issue.message,
+      SEVERITY[issue.severity] ?? vscode.DiagnosticSeverity.Warning,
+    );
+    diagnostic.source = 'xtxt';
+    return diagnostic;
+  }));
+}
+
+/**
+ * The range covering one 1-based source line, trimmed of indentation so the
+ * squiggle sits under the text rather than the whitespace before it.
+ */
+function lineRange(document: vscode.TextDocument, line: number): vscode.Range {
+  // An issue can point one past the end — an unclosed block reported at EOF.
+  const index = Math.min(Math.max(line - 1, 0), Math.max(document.lineCount - 1, 0));
+  const text = document.lineAt(index);
+  return text.isEmptyOrWhitespace
+    ? text.range
+    : new vscode.Range(index, text.firstNonWhitespaceCharacterIndex, index, text.text.length);
+}
+
+// ---------------------------------------------------------------------------
+// Outline and folding
+// ---------------------------------------------------------------------------
+
+/**
+ * Headings nested by level, with record blocks hung under the heading they
+ * fall in. Records are the point of the format, so an outline that showed only
+ * headings would hide exactly what makes an XTXT document worth navigating.
+ */
+class SymbolProvider implements vscode.DocumentSymbolProvider {
+  provideDocumentSymbols(document: vscode.TextDocument): vscode.DocumentSymbol[] {
+    const { doc } = parse(document.getText());
+    const data = extract(doc);
+    const extent = new Map(blockRanges(lines(document)).map((b) => [b.start, b]));
+
+    const roots: vscode.DocumentSymbol[] = [];
+    const stack: Array<{ level: number; symbol: vscode.DocumentSymbol }> = [];
+
+    const push = (symbol: vscode.DocumentSymbol, level: number) => {
+      while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
+      const parent = stack[stack.length - 1];
+      (parent ? parent.symbol.children : roots).push(symbol);
+      // A parent's range must contain its children, or the breadcrumb bar
+      // silently drops them.
+      for (const entry of stack) {
+        entry.symbol.range = entry.symbol.range.union(symbol.range);
+      }
+      return symbol;
+    };
+
+    for (const entry of merge(data.outline, data.blocks)) {
+      if ('level' in entry) {
+        const range = lineRange(document, entry.line);
+        const symbol = new vscode.DocumentSymbol(
+          entry.text || 'Untitled', '', vscode.SymbolKind.String, range, range);
+        stack.push({ level: entry.level, symbol: push(symbol, entry.level) });
+      } else {
+        const selection = lineRange(document, entry.line);
+        const block = extent.get(entry.line - 1);
+        const range = block
+          ? new vscode.Range(block.start, 0, block.end, document.lineAt(block.end).text.length)
+          : selection;
+        push(
+          new vscode.DocumentSymbol(
+            title(entry), entry.type, vscode.SymbolKind.Object, range, selection),
+          // Blocks never own children, so they sit below any heading.
+          Number.MAX_SAFE_INTEGER,
+        );
+      }
+    }
+
+    return roots;
+  }
+}
+
+/** Headings and blocks in source order. */
+function merge(
+  outline: ReturnType<typeof extract>['outline'],
+  blocks: ReturnType<typeof extract>['blocks'],
+): Array<(typeof outline)[number] | (typeof blocks)[number]> {
+  return [...outline, ...blocks].sort((a, b) => a.line - b.line);
+}
+
+/** A record's own Title if it carries one, else just its type. */
+function title(block: ReturnType<typeof extract>['blocks'][number]): string {
+  const fields = block.fields ?? {};
+  const named = fields.title ?? fields.Title ?? fields.name ?? fields.Name;
+  return named ? `${block.type}: ${named}` : block.type;
+}
+
+class FoldingProvider implements vscode.FoldingRangeProvider {
+  provideFoldingRanges(document: vscode.TextDocument): vscode.FoldingRange[] {
+    const ranges = blockRanges(lines(document))
+      .filter((b) => b.end > b.start)
+      .map((b) => new vscode.FoldingRange(b.start, b.end));
+
+    // Headings fold to the line before the next heading of the same or higher
+    // rank — the behaviour every outline-shaped format has.
+    const headings = extract(parse(document.getText()).doc).outline;
+    headings.forEach((heading, i) => {
+      const next = headings.slice(i + 1).find((h) => h.level <= heading.level);
+      const end = (next ? next.line - 1 : document.lineCount) - 1;
+      if (end > heading.line - 1) ranges.push(new vscode.FoldingRange(heading.line - 1, end));
+    });
+
+    return ranges;
+  }
+}
+
+/**
+ * Read the lines through the document itself rather than splitting its text:
+ * the block extents are used to index back into it with `lineAt`, and any
+ * disagreement about what ends a line — a lone CR, most plausibly — would
+ * throw out of the provider rather than degrade.
+ */
+function lines(document: vscode.TextDocument): string[] {
+  return Array.from({ length: document.lineCount }, (_, i) => document.lineAt(i).text);
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +283,14 @@ function resourceRoots(uri: vscode.Uri): vscode.Uri[] {
   const folder = vscode.workspace.getWorkspaceFolder(uri);
   if (folder) roots.push(folder.uri);
   return roots;
+}
+
+/** Whether `target` is one of `roots` or sits underneath one of them. */
+function contains(roots: vscode.Uri[], target: vscode.Uri): boolean {
+  return roots.some((root) =>
+    root.scheme === target.scheme &&
+    root.authority === target.authority &&
+    isUnder(root.path, target.path));
 }
 
 /** Rewrite relative media sources so the webview can actually load them. */
@@ -287,10 +461,20 @@ async function storeImage(
 
   const ext = EXTENSION_FOR_MIME[mime] ?? '.png';
   const stem = (basename(document.uri).replace(/\.xtxt$/, '') || 'image');
-  const folder = config.get<string>('paste.folder', '').trim();
-  const dir = folder
-    ? vscode.Uri.joinPath(document.uri, '..', folder)
-    : vscode.Uri.joinPath(document.uri, '..');
+  const here = vscode.Uri.joinPath(document.uri, '..');
+
+  let folder = config.get<string>('paste.folder', '').trim();
+  let dir = folder ? vscode.Uri.joinPath(document.uri, '..', folder) : here;
+
+  // The setting is window-scoped, so a repository can set it in its own
+  // .vscode/settings.json. Opening someone else's project must not let it
+  // choose where this extension creates directories and writes files.
+  if (folder && !contains(resourceRoots(document.uri), dir)) {
+    void vscode.window.showWarningMessage(
+      `Ignoring xtxt.paste.folder "${folder}": it points outside the workspace.`);
+    folder = '';
+    dir = here;
+  }
 
   if (folder) {
     await vscode.workspace.fs.createDirectory(dir);
@@ -364,16 +548,22 @@ async function readClipboardImage(): Promise<Buffer> {
     const { stdout } = await run('osascript', ['-e', script]);
     if (stdout.trim() !== 'ok') throw new Error('the clipboard holds no image');
   } else if (process.platform === 'win32') {
+    // A single-quoted PowerShell string is literal; a double-quoted one would
+    // expand `$(…)` out of the temp path.
+    const literal = `'${tmp.fsPath.replace(/'/g, "''")}'`;
     await run('powershell', ['-NoProfile', '-STA', '-Command', `
       Add-Type -AssemblyName System.Windows.Forms
       $img = [Windows.Forms.Clipboard]::GetImage()
       if ($img -eq $null) { exit 1 }
-      $img.Save(${JSON.stringify(tmp.fsPath)}, [System.Drawing.Imaging.ImageFormat]::Png)`]);
+      $img.Save(${literal}, [System.Drawing.Imaging.ImageFormat]::Png)`]);
   } else {
+    // The path goes in as an argument and is read back as "$0", so the shell
+    // never parses it as script however it is spelled.
     const { stdout } = await run('sh', ['-c',
-      `wl-paste --type image/png > ${JSON.stringify(tmp.fsPath)} 2>/dev/null || ` +
-      `xclip -selection clipboard -t image/png -o > ${JSON.stringify(tmp.fsPath)} 2>/dev/null || ` +
-      `echo missing`]);
+      'wl-paste --type image/png > "$0" 2>/dev/null || ' +
+      'xclip -selection clipboard -t image/png -o > "$0" 2>/dev/null || ' +
+      'echo missing',
+      tmp.fsPath]);
     if (stdout.trim() === 'missing') {
       throw new Error('install wl-clipboard or xclip to paste images');
     }

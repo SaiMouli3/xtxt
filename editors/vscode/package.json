@@ -2,9 +2,10 @@
   "name": "xtxt",
   "displayName": "XTXT",
   "description": "Syntax highlighting, live preview and image pasting for the XTXT document format",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "xtxt",
   "license": "MIT",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -12,6 +13,12 @@
     "Programming Languages",
     "Visualization"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Previewing a document writes files and reads the system clipboard, so the extension stays off until the folder is trusted."
+    }
+  },
   "contributes": {
     "languages": [
       {
@@ -116,6 +123,7 @@
   "scripts": {
     "build": "node esbuild.config.mjs production",
     "watch": "node esbuild.config.mjs",
+    "test": "esbuild src/blocks.test.ts --bundle --platform=node --format=esm --outfile=out/blocks.test.mjs && node --test out/blocks.test.mjs",
     "vscode:prepublish": "npm run build",
     "package": "npx --yes @vscode/vsce package --no-dependencies",
     "publish": "npx --yes @vscode/vsce publish --no-dependencies"

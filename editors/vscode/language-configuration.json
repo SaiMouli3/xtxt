@@ -8,11 +8,5 @@
     { "open": "[", "close": "]" }
   ],
   "surroundingPairs": [["(", ")"], ["\"", "\""], ["`", "`"], ["*", "*"]],
-  "wordPattern": "[A-Za-z0-9_@-]+",
-  "folding": {
-    "markers": {
-      "start": "^@(?!end)[A-Za-z_][A-Za-z0-9_-]*",
-      "end": "^@end[A-Za-z_][A-Za-z0-9_-]*\\s*$"
-    }
-  }
+  "wordPattern": "[A-Za-z0-9_@-]+"
 }

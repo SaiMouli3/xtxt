@@ -13,9 +13,13 @@ Syntax highlighting, live preview and image pasting for the
   the platform does not surface the image to VS Code
 - **Syntax highlighting**, with `@code(language="…")` blocks highlighted in
   their own language
-- **Folding** on `@block` / `@endblock`, and `@comment` toggling
-- **Diagnostics** shown above the preview; unknown directives are warnings,
+- **Problems and squiggles** — everything `xtxt validate` reports, in the
+  editor and the Problems panel as you type. Unknown directives are warnings,
   never errors
+- **Outline** — headings *and* records, so `Cmd+Shift+O`, the breadcrumb bar
+  and the Outline view jump straight to a `@task` or `@decision`
+- **Folding** on `@block` / `@endblock` and on headings, and `@comment`
+  toggling
 
 VS Code cannot draw images inline in a text editor — no extension API exposes
 that — so the preview panel is where you see them, the same way Markdown works.
