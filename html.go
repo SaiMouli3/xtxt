@@ -21,7 +21,18 @@ type HTMLOptions struct {
 	// Plugins render directives the core does not know about. Anything still
 	// unknown after this falls back to a visible placeholder.
 	Plugins Plugins
+	// Interactive inlines the chart runtime, letting a reader read values off a
+	// chart and hide a series. Off by default: a script-free file is safe to
+	// embed in someone else's page or open from an untrusted source, and that
+	// is worth more than the affordance to most readers.
+	Interactive bool
 }
+
+// ChartRuntime is the script that upgrades a rendered chart, embedded so the Go
+// and JavaScript renderers ship the same bytes and cannot drift.
+//
+//go:embed assets/chart-runtime.js
+var ChartRuntime string
 
 // RenderHTML renders a document to HTML.
 func RenderHTML(doc *Document, opt HTMLOptions) string {
@@ -42,7 +53,11 @@ func RenderHTML(doc *Document, opt HTMLOptions) string {
 	}
 	b.WriteString("</head>\n<body>\n<main class=\"xtxt\">\n")
 	b.WriteString(body)
-	b.WriteString("</main>\n</body>\n</html>\n")
+	b.WriteString("</main>\n")
+	if opt.Interactive && strings.Contains(body, "data-xtxt-chart") {
+		fmt.Fprintf(&b, "<script>%s</script>\n", ChartRuntime)
+	}
+	b.WriteString("</body>\n</html>\n")
 	return b.String()
 }
 

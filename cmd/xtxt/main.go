@@ -42,6 +42,9 @@ options:
   -o <path>    write to a file instead of stdout
   -w <n>       wrap column for text output (default 80)
   --mermaid    in html output, load mermaid.js from a CDN to draw diagrams
+  --interactive in html output, inline the script that lets a reader read
+               values off a chart and hide a series (off: output stays
+               script-free, which is safe to embed anywhere)
   --no-color   disable ANSI colour in terminal output
 
 Use - as <file> to read from stdin.
@@ -56,7 +59,7 @@ func main() {
 
 	var out, pluginPath, caption, imgWidth string
 	var width = 80
-	var mermaid, noColor, resolve, embed bool
+	var mermaid, noColor, resolve, embed, interactive bool
 	var rest []string
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -72,6 +75,8 @@ func main() {
 			}
 		case "--mermaid":
 			mermaid = true
+		case "--interactive":
+			interactive = true
 		case "--resolve":
 			resolve = true
 		case "--embed":
@@ -105,7 +110,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	opts := runOptions{width: width, mermaid: mermaid, resolve: resolve, pluginPath: pluginPath}
+	opts := runOptions{width: width, mermaid: mermaid, interactive: interactive, resolve: resolve, pluginPath: pluginPath}
 	cmd, files := rest[0], rest[1:]
 	switch cmd {
 	case "validate", "lint":
@@ -159,11 +164,12 @@ func read(path string) (string, error) {
 }
 
 type runOptions struct {
-	width      int
-	mermaid    bool
-	resolve    bool
-	color      bool
-	pluginPath string
+	width       int
+	mermaid     bool
+	interactive bool
+	resolve     bool
+	color       bool
+	pluginPath  string
 }
 
 // load parses a document and, when asked, expands its @include/@embed
@@ -217,7 +223,8 @@ func render(path, format string, opts runOptions) string {
 	switch format {
 	case "html":
 		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{
-			Full: true, Mermaid: opts.mermaid, Plugins: loadPlugins(path, opts)})
+			Full: true, Mermaid: opts.mermaid, Interactive: opts.interactive,
+			Plugins: loadPlugins(path, opts)})
 	case "body":
 		return xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{Plugins: loadPlugins(path, opts)})
 	case "md", "markdown":

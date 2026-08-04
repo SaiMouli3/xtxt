@@ -412,12 +412,15 @@ func barSVG(c Chart) string {
 			if groups > 1 {
 				gap = 2 // surface gap between adjacent fills
 			}
-			fmt.Fprintf(&b, `<path d="%s" fill="%s"><title>%s%s: %s</title></path>`,
-				barPath(float64(labelCol), y, w, float64(each)-gap, 4), seriesColor(si),
+			// data-index and data-series are the only hooks the interactive
+			// runtime needs: one to know which category is under the pointer,
+			// one to hide a series without redrawing anything.
+			fmt.Fprintf(&b, `<path data-index="%d" data-series="%d" d="%s" fill="%s"><title>%s%s: %s</title></path>`,
+				i, si, barPath(float64(labelCol), y, w, float64(each)-gap, 4), seriesColor(si),
 				html.EscapeString(label), seriesSuffix(s.Name), html.EscapeString(formatNumber(s.Values[i], c.Unit)))
 			if groups == 1 {
-				fmt.Fprintf(&b, `<text class="c-value" x="%.1f" y="%.1f">%s</text>`,
-					float64(labelCol)+w+8, y+float64(each)/2+4, html.EscapeString(formatNumber(s.Values[i], c.Unit)))
+				fmt.Fprintf(&b, `<text class="c-value" data-series="%d" x="%.1f" y="%.1f">%s</text>`,
+					si, float64(labelCol)+w+8, y+float64(each)/2+4, html.EscapeString(formatNumber(s.Values[i], c.Unit)))
 			}
 		}
 	}
@@ -445,9 +448,9 @@ func proportionSVG(c Chart) string {
 	x := 0.0
 	for i, v := range c.Series[0].Values {
 		w := float64(chartW) * v / total
-		fmt.Fprintf(&b, `<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="%s" rx="2">`+
+		fmt.Fprintf(&b, `<rect data-index="%d" x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="%s" rx="2">`+
 			`<title>%s: %s (%.1f%%)</title></rect>`,
-			x, barTop, maxf(w-2, 0), thick, seriesColor(i),
+			i, x, barTop, maxf(w-2, 0), thick, seriesColor(i),
 			html.EscapeString(c.Labels[i]), html.EscapeString(formatNumber(v, c.Unit)), v/total*100)
 		if w > 46 {
 			fmt.Fprintf(&b, `<text class="c-inbar" x="%.1f" y="%.1f" text-anchor="middle">%.0f%%</text>`,
@@ -504,15 +507,15 @@ func lineSVG(c Chart) string {
 			pts = append(pts, fmt.Sprintf("%.1f,%.1f", x(i), y(v)))
 		}
 		if c.Type == "area" {
-			fmt.Fprintf(&b, `<polygon points="%.1f,%.1f %s %.1f,%.1f" fill="%s" opacity="0.14"/>`,
-				x(0), top+plotH, strings.Join(pts, " "), x(len(s.Values)-1), top+plotH, seriesColor(si))
+			fmt.Fprintf(&b, `<polygon data-series="%d" points="%.1f,%.1f %s %.1f,%.1f" fill="%s" opacity="0.14"/>`,
+				si, x(0), top+plotH, strings.Join(pts, " "), x(len(s.Values)-1), top+plotH, seriesColor(si))
 		}
-		fmt.Fprintf(&b, `<polyline points="%s" fill="none" stroke="%s" stroke-width="2" `+
-			`stroke-linejoin="round" stroke-linecap="round"/>`, strings.Join(pts, " "), seriesColor(si))
+		fmt.Fprintf(&b, `<polyline data-series="%d" points="%s" fill="none" stroke="%s" stroke-width="2" `+
+			`stroke-linejoin="round" stroke-linecap="round"/>`, si, strings.Join(pts, " "), seriesColor(si))
 		for i, v := range s.Values {
-			fmt.Fprintf(&b, `<circle cx="%.1f" cy="%.1f" r="4" fill="%s" stroke="var(--chart-surface)" stroke-width="2">`+
+			fmt.Fprintf(&b, `<circle data-index="%d" data-series="%d" cx="%.1f" cy="%.1f" r="4" fill="%s" stroke="var(--chart-surface)" stroke-width="2">`+
 				`<title>%s%s: %s</title></circle>`,
-				x(i), y(v), seriesColor(si), html.EscapeString(c.Labels[i]), seriesSuffix(s.Name),
+				i, si, x(i), y(v), seriesColor(si), html.EscapeString(c.Labels[i]), seriesSuffix(s.Name),
 				html.EscapeString(formatNumber(v, c.Unit)))
 		}
 		// Label the ends and the peak only — never every point. Deduplicate:

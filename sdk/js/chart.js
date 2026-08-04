@@ -264,10 +264,10 @@ function barSVG(c) {
       const w = plot * s.values[i] / max;
       const y = top + (ROW_H - each * groups) / 2 + si * each;
       const gap = groups > 1 ? 2 : 0;
-      out += `<path d="${barPath(LABEL_COL, y, w, each - gap, 4)}" fill="${seriesColor(si)}">`
+      out += `<path data-index="${i}" data-series="${si}" d="${barPath(LABEL_COL, y, w, each - gap, 4)}" fill="${seriesColor(si)}">`
         + `<title>${esc(label)}${esc(suffix(s.name))}: ${esc(formatNumber(s.values[i], c.unit))}</title></path>`;
       if (groups === 1) {
-        out += `<text class="c-value" x="${(LABEL_COL + w + 8).toFixed(1)}" `
+        out += `<text class="c-value" data-series="${si}" x="${(LABEL_COL + w + 8).toFixed(1)}" `
           + `y="${(y + each / 2 + 4).toFixed(1)}">${esc(formatNumber(s.values[i], c.unit))}</text>`;
       }
     });
@@ -287,7 +287,7 @@ function proportionSVG(c) {
   let x = 0;
   values.forEach((v, i) => {
     const w = CHART_W * v / total;
-    out += `<rect x="${x.toFixed(1)}" y="${barTop}" width="${Math.max(w - 2, 0).toFixed(1)}" `
+    out += `<rect data-index="${i}" x="${x.toFixed(1)}" y="${barTop}" width="${Math.max(w - 2, 0).toFixed(1)}" `
       + `height="${thick}" fill="${seriesColor(i)}" rx="2"><title>${esc(c.labels[i])}: `
       + `${esc(formatNumber(v, c.unit))} (${(v / total * 100).toFixed(1)}%)</title></rect>`;
     if (w > 46) {
@@ -329,14 +329,14 @@ function lineSVG(c) {
   c.series.forEach((s, si) => {
     const pts = s.values.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
     if (c.type === 'area') {
-      out += `<polygon points="${X(0).toFixed(1)},${(top + plotH).toFixed(1)} ${pts} `
+      out += `<polygon data-series="${si}" points="${X(0).toFixed(1)},${(top + plotH).toFixed(1)} ${pts} `
         + `${X(s.values.length - 1).toFixed(1)},${(top + plotH).toFixed(1)}" `
         + `fill="${seriesColor(si)}" opacity="0.14"/>`;
     }
-    out += `<polyline points="${pts}" fill="none" stroke="${seriesColor(si)}" stroke-width="2" `
+    out += `<polyline data-series="${si}" points="${pts}" fill="none" stroke="${seriesColor(si)}" stroke-width="2" `
       + 'stroke-linejoin="round" stroke-linecap="round"/>';
     s.values.forEach((v, i) => {
-      out += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="4" fill="${seriesColor(si)}" `
+      out += `<circle data-index="${i}" data-series="${si}" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="4" fill="${seriesColor(si)}" `
         + `stroke="var(--chart-surface)" stroke-width="2"><title>${esc(c.labels[i])}`
         + `${esc(suffix(s.name))}: ${esc(formatNumber(v, c.unit))}</title></circle>`;
     });
