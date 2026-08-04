@@ -8,9 +8,10 @@
  * @module xtxt
  */
 
-import { renderChart } from './chart.js';
+import { renderChart, renderTableChart } from './chart.js';
 
-export { parseChart, renderChart, renderChartSVG, chartTableHTML } from './chart.js';
+export { parseChart, renderChart, renderChartSVG, chartTableHTML,
+  tableChart, chartData, renderTableChart } from './chart.js';
 
 const NAME_START = /[A-Za-z_]/;
 const NAME_BYTE = /[A-Za-z0-9_-]/;
@@ -871,7 +872,7 @@ function directiveHTML(n) {
     case 'math': return `<div class="math">${e(n.text)}</div>`;
     case 'mermaid': return `<pre class="mermaid">${e(n.text)}</pre>`;
     case 'raw': return n.args.resolve('format') === 'html' ? n.text : `<pre>${e(n.text)}</pre>`;
-    case 'table': return tableHTML(n);
+    case 'table': return renderTableChart(n, parseTable(n)) + tableHTML(n);
     case 'chart': return renderChart(n);
     default: {
       if (n.kind === 'block') {

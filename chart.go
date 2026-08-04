@@ -1,11 +1,40 @@
 package xtxt
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"strconv"
 	"strings"
 )
+
+// chartJSON serialises a chart for the interactive runtime to read back out of
+// the DOM. The SVG beside it is the document; this is only what a reader's
+// browser needs in order to redraw the same numbers a different way.
+//
+// The field names are shared with the JavaScript SDK and the runtime, so they
+// are spelled out here rather than taken from Go's struct names.
+func chartJSON(c Chart) string {
+	type series struct {
+		Name   string    `json:"name"`
+		Values []float64 `json:"values"`
+	}
+	payload := struct {
+		Type   string   `json:"type"`
+		Title  string   `json:"title,omitempty"`
+		Unit   string   `json:"unit,omitempty"`
+		Labels []string `json:"labels"`
+		Series []series `json:"series"`
+	}{Type: c.Type, Title: c.Title, Unit: c.Unit, Labels: c.Labels}
+	for _, s := range c.Series {
+		payload.Series = append(payload.Series, series{Name: s.Name, Values: s.Values})
+	}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
 
 // Chart is the interpreted payload of an @chart block: a list of categories and
 // one or more series of values over them.
@@ -88,23 +117,153 @@ func ParseChart(n Node) Chart {
 		}
 	}
 
-	if len(c.Series) > maxSeries {
-		kept := c.Series[:maxSeries]
-		other := Series{Name: "Other", Values: make([]float64, len(c.Labels))}
-		for _, s := range c.Series[maxSeries:] {
-			for i, v := range s.Values {
-				other.Values[i] += v
-			}
-		}
-		c.Series = append(kept, other)
-		c.Warnings = append(c.Warnings,
-			"chart has more series than the palette validates; the extras were folded into \"Other\"")
-	}
+	foldExtraSeries(&c)
 	if c.Type == "pie" || c.Type == "donut" {
 		c.Warnings = append(c.Warnings,
 			"@chart(type=\"pie\") renders as a proportion bar: angles are much harder to compare than lengths")
 	}
 	return c
+}
+
+// foldExtraSeries keeps the drawn series within the palette that was checked for
+// contrast, summing the rest into "Other" rather than inventing hues.
+func foldExtraSeries(c *Chart) {
+	if len(c.Series) <= maxSeries {
+		return
+	}
+	kept := c.Series[:maxSeries]
+	other := Series{Name: "Other", Values: make([]float64, len(c.Labels))}
+	for _, s := range c.Series[maxSeries:] {
+		for i, v := range s.Values {
+			other.Values[i] += v
+		}
+	}
+	c.Series = append(kept, other)
+	c.Warnings = append(c.Warnings,
+		"chart has more series than the palette validates; the extras were folded into \"Other\"")
+}
+
+// TableChart reads a @table that carries a chart= argument as a chart over its
+// own rows. The table stays the data and is still rendered in full; this is a
+// second view of it, which is why a reader that ignores the argument loses
+// nothing.
+//
+// The bool reports whether there is a chart to draw. Warnings are returned on
+// the Chart either way, so the caller can show why one did not appear.
+func TableChart(n Node) (Chart, bool) {
+	kind := strings.ToLower(strings.TrimSpace(n.Args.Get("chart")))
+	if kind == "" {
+		return Chart{}, false
+	}
+
+	c := Chart{Type: kind, Title: n.Args.Get("title"), Unit: n.Args.Get("unit")}
+	switch c.Type {
+	case "bar", "line", "area", "stacked", "pie", "donut", "proportion":
+	default:
+		c.Warnings = append(c.Warnings,
+			fmt.Sprintf("unknown chart type %q; drawing a bar chart", kind))
+		c.Type = "bar"
+	}
+
+	t := ParseTable(n)
+	if len(t.Header) == 0 || len(t.Rows) == 0 {
+		c.Warnings = append(c.Warnings, "the table has no rows to chart")
+		return c, false
+	}
+
+	x := 0
+	if want := strings.TrimSpace(n.Args.Get("x")); want != "" {
+		if i := columnIndex(t.Header, want); i >= 0 {
+			x = i
+		} else {
+			c.Warnings = append(c.Warnings,
+				fmt.Sprintf("no column named %q; labelling with %q", want, t.Header[0]))
+		}
+	}
+
+	ys := valueColumns(t, x, n.Args.Get("y"), &c)
+	if len(ys) == 0 {
+		c.Warnings = append(c.Warnings, "no numeric column to chart")
+		return c, false
+	}
+
+	for _, i := range ys {
+		c.Series = append(c.Series, Series{Name: header(t, i)})
+	}
+	for _, row := range t.Rows {
+		c.Labels = append(c.Labels, cell(row, x))
+		for s, i := range ys {
+			// A cell that is not a number counts as zero, which the renderer can
+			// draw. Leaving a real gap would mean teaching every SVG builder
+			// about absent points; until then the warning is the honest signal.
+			text := cell(row, i)
+			if text != "" && !parseNumberOK(text) {
+				c.Warnings = append(c.Warnings,
+					fmt.Sprintf("%q in column %q is not a number; charted as zero", text, header(t, i)))
+			}
+			c.Series[s].Values = append(c.Series[s].Values, parseNumber(text))
+		}
+	}
+
+	foldExtraSeries(&c)
+	return c, true
+}
+
+// valueColumns resolves y= to column indexes, defaulting to every column other
+// than the labels that holds a number anywhere.
+func valueColumns(t Table, x int, want string, c *Chart) []int {
+	var out []int
+	if strings.TrimSpace(want) != "" {
+		for _, name := range strings.Split(want, ",") {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			if i := columnIndex(t.Header, name); i >= 0 {
+				out = append(out, i)
+			} else {
+				c.Warnings = append(c.Warnings, fmt.Sprintf("no column named %q", name))
+			}
+		}
+		return out
+	}
+	for i := range t.Header {
+		if i == x {
+			continue
+		}
+		for _, row := range t.Rows {
+			if parseNumberOK(cell(row, i)) {
+				out = append(out, i)
+				break
+			}
+		}
+	}
+	return out
+}
+
+// columnIndex finds a header by name, ignoring case and surrounding space.
+func columnIndex(header []string, name string) int {
+	name = strings.ToLower(strings.TrimSpace(name))
+	for i, h := range header {
+		if strings.ToLower(strings.TrimSpace(h)) == name {
+			return i
+		}
+	}
+	return -1
+}
+
+func header(t Table, i int) string {
+	if i < len(t.Header) {
+		return strings.TrimSpace(t.Header[i])
+	}
+	return ""
+}
+
+func cell(row []string, i int) string {
+	if i < len(row) {
+		return strings.TrimSpace(row[i])
+	}
+	return ""
 }
 
 // chartCells splits a data row. Explicit separators win; otherwise the value is

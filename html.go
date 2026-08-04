@@ -195,7 +195,7 @@ func renderDirectiveHTML(n Node) string {
 		}
 		return fmt.Sprintf("<pre>%s</pre>\n", esc(n.Text))
 	case "table":
-		return renderTableHTML(n)
+		return renderTableChartHTML(n) + renderTableHTML(n)
 	case "chart":
 		c := ParseChart(n)
 		svg := RenderChartSVG(c)
@@ -267,6 +267,32 @@ func attr(name, val string) string {
 		return ""
 	}
 	return fmt.Sprintf(` %s="%s"`, name, html.EscapeString(val))
+}
+
+// renderTableChartHTML draws the chart a @table asked for, above the table
+// itself. The table is left untouched and always follows, so the numbers stay
+// reachable as text (SPEC §5.5) whether or not the chart renders.
+//
+// Warnings are shown rather than swallowed: they are the only way an author
+// learns that x="Moth" matched no column, since these do not reach Lint.
+func renderTableChartHTML(n Node) string {
+	esc := html.EscapeString
+	c, ok := TableChart(n)
+	out := ""
+	if ok {
+		if svg := RenderChartSVG(c); svg != "" {
+			out = "<figure class=\"chart\" data-xtxt-chart=\"" +
+				esc(chartJSON(c)) + "\">" + svg
+			if c.Title != "" {
+				out += "<figcaption>" + InlineHTML(c.Title) + "</figcaption>"
+			}
+			out += "</figure>\n"
+		}
+	}
+	for _, w := range c.Warnings {
+		out += "<p class=\"chart-warning\">" + esc(w) + "</p>\n"
+	}
+	return out
 }
 
 func renderTableHTML(n Node) string {

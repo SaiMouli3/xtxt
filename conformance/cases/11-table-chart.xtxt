@@ -1,0 +1,18 @@
+@table(chart="bar", x="Month", y="Signups, Revenue", title="Growth")
+Month | Signups | Revenue
+------|---------|--------
+Jan | 20 | 1200
+Feb | 35 | 2400
+@endtable
+
+@table(chart="line")
+Quarter | North
+1 | 10
+2 | 14
+@endtable
+
+@table
+Name | Age
+-----|----
+John | 20
+@endtable

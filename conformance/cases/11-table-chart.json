@@ -1,0 +1,57 @@
+{
+  "ast": {
+    "nodes": [
+      {
+        "args": [
+          {
+            "key": "chart",
+            "value": "bar"
+          },
+          {
+            "key": "x",
+            "value": "Month"
+          },
+          {
+            "key": "y",
+            "value": "Signups, Revenue"
+          },
+          {
+            "key": "title",
+            "value": "Growth"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 1,
+        "name": "table",
+        "text": "Month | Signups | Revenue\n------|---------|--------\nJan | 20 | 1200\nFeb | 35 | 2400"
+      },
+      {
+        "args": [
+          {
+            "key": "chart",
+            "value": "line"
+          }
+        ],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 8,
+        "name": "table",
+        "text": "Quarter | North\n1 | 10\n2 | 14"
+      },
+      {
+        "args": [],
+        "items": [],
+        "kind": "block",
+        "level": 0,
+        "line": 14,
+        "name": "table",
+        "text": "Name | Age\n-----|----\nJohn | 20"
+      }
+    ],
+    "version": ""
+  },
+  "issues": []
+}

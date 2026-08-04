@@ -94,6 +94,130 @@ export function parseChart(n) {
   return c;
 }
 
+const CHART_TYPES = ['bar', 'line', 'area', 'stacked', 'pie', 'donut', 'proportion'];
+
+const columnIndex = (header, name) => header.findIndex(
+  (h) => String(h).trim().toLowerCase() === String(name).trim().toLowerCase());
+const headerAt = (t, i) => String(t.header[i] ?? '').trim();
+const cellAt = (row, i) => String(row[i] ?? '').trim();
+
+/**
+ * Reads a `@table` carrying a `chart=` argument as a chart over its own rows.
+ * The table stays the data and is still rendered in full; this is a second view
+ * of it, so a reader that ignores the argument loses nothing.
+ *
+ * Takes the parsed table rather than parsing it, because `parseTable` lives in
+ * the main module and importing it here would make the two files circular.
+ *
+ * Returns null when there is no chart to draw; `warnings` is carried on the
+ * returned object so a caller can say why one did not appear.
+ */
+export function tableChart(n, table) {
+  const kind = String(n.args.get('chart') ?? '').trim().toLowerCase();
+  if (!kind) return null;
+
+  const c = {
+    type: kind, title: n.args.get('title'), unit: n.args.get('unit'),
+    labels: [], series: [], warnings: [],
+  };
+  if (!CHART_TYPES.includes(c.type)) {
+    c.warnings.push(`unknown chart type "${kind}"; drawing a bar chart`);
+    c.type = 'bar';
+  }
+  if (!table.header.length || !table.rows.length) {
+    c.warnings.push('the table has no rows to chart');
+    return c;
+  }
+
+  let x = 0;
+  const wantX = String(n.args.get('x') ?? '').trim();
+  if (wantX) {
+    const i = columnIndex(table.header, wantX);
+    if (i >= 0) x = i;
+    else c.warnings.push(`no column named "${wantX}"; labelling with "${headerAt(table, 0)}"`);
+  }
+
+  const ys = valueColumns(table, x, n.args.get('y'), c);
+  if (!ys.length) {
+    c.warnings.push('no numeric column to chart');
+    return c;
+  }
+
+  for (const i of ys) c.series.push({ name: headerAt(table, i), values: [] });
+  for (const row of table.rows) {
+    c.labels.push(cellAt(row, x));
+    ys.forEach((i, s) => {
+      // A cell that is not a number counts as zero, which the renderer can
+      // draw. A real gap would mean teaching every SVG builder about absent
+      // points; until then the warning is the honest signal.
+      const text = cellAt(row, i);
+      if (text && !isNumeric(text)) {
+        c.warnings.push(`"${text}" in column "${headerAt(table, i)}" is not a number; charted as zero`);
+      }
+      c.series[s].values.push(toNumber(text));
+    });
+  }
+
+  if (c.series.length > MAX_SERIES) {
+    const other = { name: 'Other', values: new Array(c.labels.length).fill(0) };
+    for (const s of c.series.slice(MAX_SERIES)) s.values.forEach((v, i) => { other.values[i] += v; });
+    c.series = [...c.series.slice(0, MAX_SERIES), other];
+    c.warnings.push('chart has more series than the palette validates; the extras were folded into "Other"');
+  }
+  return c;
+}
+
+/**
+ * Resolves `y=` to column indexes, defaulting to every column other than the
+ * labels that holds a number anywhere.
+ */
+function valueColumns(table, x, want, c) {
+  const named = String(want ?? '').trim();
+  if (named) {
+    const out = [];
+    for (const raw of named.split(',')) {
+      const name = raw.trim();
+      if (!name) continue;
+      const i = columnIndex(table.header, name);
+      if (i >= 0) out.push(i);
+      else c.warnings.push(`no column named "${name}"`);
+    }
+    return out;
+  }
+  return table.header
+    .map((_, i) => i)
+    .filter((i) => i !== x && table.rows.some((row) => isNumeric(cellAt(row, i))));
+}
+
+/**
+ * Serialises a chart for the interactive runtime to read back out of the DOM.
+ * Key order and the omission of empty title/unit match the Go renderer exactly,
+ * so the same document produces the same attribute from either.
+ */
+export function chartData(c) {
+  const payload = { type: c.type };
+  if (c.title) payload.title = c.title;
+  if (c.unit) payload.unit = c.unit;
+  payload.labels = c.labels;
+  payload.series = c.series.map((s) => ({ name: s.name, values: s.values }));
+  return JSON.stringify(payload);
+}
+
+/** The chart a `@table` asked for, above the table itself. */
+export function renderTableChart(n, table) {
+  const c = tableChart(n, table);
+  if (!c) return '';
+  let out = '';
+  const svg = renderChartSVG(c);
+  if (svg) {
+    const caption = c.title ? `<figcaption>${esc(c.title)}</figcaption>` : '';
+    out = `<figure class="chart" data-xtxt-chart="${esc(chartData(c))}">${svg}${caption}</figure>`;
+  }
+  // Shown rather than swallowed: these do not reach validate(), so this is the
+  // only way an author learns that x="Moth" matched no column.
+  return out + c.warnings.map((w) => `<p class="chart-warning">${esc(w)}</p>`).join('');
+}
+
 const chartLabel = (c) => c.title || `${c.type} chart of ${c.labels.join(', ')}`;
 const svgOpen = (w, h, label) => `<svg class="xtxt-chart" viewBox="0 0 ${w} ${h}" width="100%" `
   + `height="${h}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg">`;
