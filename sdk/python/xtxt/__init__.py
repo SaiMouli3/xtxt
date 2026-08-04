@@ -218,6 +218,9 @@ class _Parser:
     def _err(self, line: int, msg: str) -> None:
         self.issues.append(Issue("error", line, msg))
 
+    def _warn(self, line: int, msg: str) -> None:
+        self.issues.append(Issue("warning", line, msg))
+
     # -- directives --------------------------------------------------------
 
     def _directive(self) -> None:
@@ -292,10 +295,22 @@ class _Parser:
     def _list(self) -> None:
         start = self.i
         items: list[Item] = []
+        base_indent, flagged = -1, False
         while self.i < len(self.lines):
             pre = _item_prefix(self.lines[self.i])
             if not pre:
                 break
+            # Lists do not nest (SPEC 3.4), so an item indented deeper than the
+            # first is structure about to be lost. Flattening it silently turns
+            # a formatting mistake into data loss; uniform indent is style.
+            line_ = self.lines[self.i]
+            indent = len(line_) - len(line_.lstrip(" \t"))
+            if base_indent < 0:
+                base_indent = indent
+            elif indent > base_indent and not flagged:
+                self._warn(self.i + 1, "list item is indented deeper than the first: "
+                           "XTXT lists do not nest, so it is flattened")
+                flagged = True
             body = self.lines[self.i].lstrip(" \t")[len(pre):].strip()
             it = Item(text="", ordered=pre[0].isdigit())
             if len(body) >= 3 and body[0] == "[" and body[2] == "]" and body[1] in " xX":

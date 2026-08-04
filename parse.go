@@ -427,10 +427,23 @@ func itemPrefix(s string) string {
 func (p *parser) parseList() {
 	start := p.i
 	var items []Item
+	baseIndent, flagged := -1, false
 	for p.more() {
 		pre := itemPrefix(p.cur())
 		if pre == "" {
 			break
+		}
+		// Lists do not nest (§9), so an item indented deeper than the first is
+		// structure the reader is about to lose. Flattening it without saying
+		// so turns a formatting mistake into silent data loss, which is worse
+		// than either supporting nesting or refusing it. Uniform indentation is
+		// style, not intent, so only a deeper item is worth a word.
+		indent := len(p.cur()) - len(strings.TrimLeft(p.cur(), " \t"))
+		if baseIndent < 0 {
+			baseIndent = indent
+		} else if indent > baseIndent && !flagged {
+			p.warnf(p.i+1, "list item is indented deeper than the first: XTXT lists do not nest, so it is flattened")
+			flagged = true
 		}
 		body := strings.TrimSpace(strings.TrimPrefix(strings.TrimLeft(p.cur(), " \t"), pre))
 		item := Item{Ordered: pre[0] >= '0' && pre[0] <= '9'}

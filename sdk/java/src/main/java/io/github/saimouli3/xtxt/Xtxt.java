@@ -305,6 +305,10 @@ public final class Xtxt {
       issues.add(new Issue(Severity.ERROR, line, message));
     }
 
+    private void warn(int line, String message) {
+      issues.add(new Issue(Severity.WARNING, line, message));
+    }
+
     ParseResult run() {
       while (i < lines.size()) {
         String line = lines.get(i);
@@ -425,9 +429,23 @@ public final class Xtxt {
     private void list() {
       int start = i;
       List<Item> items = new ArrayList<>();
+      int baseIndent = -1;
+      boolean flagged = false;
       while (i < lines.size()) {
         String pre = itemPrefix(lines.get(i));
         if (pre.isEmpty()) break;
+        // Lists do not nest (SPEC 3.4), so an item indented deeper than the
+        // first is structure about to be lost. Flattening it silently turns a
+        // formatting mistake into data loss; uniform indentation is style.
+        String raw = lines.get(i);
+        int indent = raw.length() - trimLeadingSpace(raw).length();
+        if (baseIndent < 0) {
+          baseIndent = indent;
+        } else if (indent > baseIndent && !flagged) {
+          warn(i + 1, "list item is indented deeper than the first: "
+              + "XTXT lists do not nest, so it is flattened");
+          flagged = true;
+        }
         String body = trimLeadingSpace(lines.get(i)).substring(pre.length()).trim();
         Item item = new Item();
         item.ordered = Character.isDigit(pre.charAt(0));

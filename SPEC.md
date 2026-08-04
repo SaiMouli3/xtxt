@@ -75,6 +75,13 @@ A list ends at the first blank line or non-item line. Lists do not nest in 1.0.
 2. Second
 ```
 
+Because they do not nest, indentation before a marker carries no meaning and
+the item joins the same flat list. An item indented deeper than the list's
+first item is almost always an attempt to nest, so a reader MUST report a
+warning there — once per list is enough. Flattening the structure silently
+would let a formatting mistake destroy the author's meaning with nothing to
+show for it; a uniformly indented list is a style choice and MUST stay quiet.
+
 ### 3.5 Checklists
 
 An unordered item whose content begins with `[ ]` or `[x]`:
@@ -425,5 +432,16 @@ A validator exits non-zero only on errors.
 Every construct is terminated by a line and nothing nests, so a parser needs a
 single pass, no backtracking inside a block, and no grammar generator. The one
 place lookahead is required is §4.3, where a directive scans forward for its
-closing fence; an implementation that wants to stream may cap that scan and
-treat "not found within N lines" as inline.
+closing fence.
+
+That scan MUST be unbounded: it continues to the end of the document or until
+the fence is found. An earlier version of this section allowed an implementation
+to cap the scan and treat "not found within N lines" as inline, with `N` left to
+the implementation. That was a defect. Two conformant parsers choosing different
+caps would produce different trees for identical bytes, which is precisely the
+dialect problem this format exists to avoid — and no implementation ever used
+the licence.
+
+A parser that wants to stream must therefore buffer from the opening line until
+the fence resolves. In the worst case that is the rest of the document, which is
+the price of the guarantee that the same bytes parse the same way everywhere.

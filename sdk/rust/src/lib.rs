@@ -319,6 +319,14 @@ impl Parser {
         });
     }
 
+    fn warn(&mut self, line: usize, message: String) {
+        self.issues.push(Issue {
+            severity: Severity::Warning,
+            line,
+            message,
+        });
+    }
+
     fn run(&mut self) {
         while self.i < self.lines.len() {
             let line = self.lines[self.i].clone();
@@ -445,11 +453,30 @@ impl Parser {
     fn list(&mut self) {
         let start = self.i;
         let mut items = Vec::new();
+        let mut base_indent: Option<usize> = None;
+        let mut flagged = false;
         while self.i < self.lines.len() {
             let line = self.lines[self.i].clone();
             let pre = item_prefix(&line).to_string();
             if pre.is_empty() {
                 break;
+            }
+            // Lists do not nest (SPEC 3.4), so an item indented deeper than the
+            // first is structure about to be lost. Flattening it silently turns
+            // a formatting mistake into data loss; uniform indent is style.
+            let indent = line.len() - line.trim_start_matches([' ', '\t']).len();
+            match base_indent {
+                None => base_indent = Some(indent),
+                Some(base) if indent > base && !flagged => {
+                    self.warn(
+                        self.i + 1,
+                        "list item is indented deeper than the first: XTXT lists do not nest, \
+                         so it is flattened"
+                            .to_string(),
+                    );
+                    flagged = true;
+                }
+                _ => {}
             }
             let mut body = line.trim_start_matches([' ', '\t'])[pre.len()..]
                 .trim()

@@ -634,10 +634,26 @@ static void parse_list(parser *p) {
   xtxt_item *items = NULL;
   size_t count = 0, cap = 0;
 
+  size_t base_indent = 0;
+  int have_base = 0, flagged = 0;
+
   while (p->i < p->lines.count) {
     const char *line = p->lines.items[p->i];
     size_t pre = item_prefix_len(line);
     if (pre == 0) break;
+    /* Lists do not nest (SPEC 3.4), so an item indented deeper than the first
+       is structure about to be lost. Flattening it silently turns a formatting
+       mistake into data loss; uniform indentation is style, not intent. */
+    {
+      size_t ind = indent_of(line);
+      if (!have_base) { base_indent = ind; have_base = 1; }
+      else if (ind > base_indent && !flagged) {
+        issuelist_push(&p->issues, XTXT_WARNING, p->i + 1,
+                       xstrdup("list item is indented deeper than the first: "
+                               "XTXT lists do not nest, so it is flattened"));
+        flagged = 1;
+      }
+    }
     const char *t = line + indent_of(line);
     char *body = trim_str(t + pre);
 

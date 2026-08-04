@@ -130,6 +130,7 @@ export function parse(src) {
   let i = 0;
 
   const err = (line, message) => issues.push({ severity: 'error', line, message });
+  const warnAt = (line, message) => issues.push({ severity: 'warning', line, message });
 
   function findFence(name, from) {
     const closer = '@end' + name;
@@ -214,10 +215,20 @@ export function parse(src) {
     } else if (itemPrefix(line)) {
       const start = i;
       const items = [];
+      let baseIndent = -1, flagged = false;
       for (;;) {
         if (i >= lines.length) break;
         const pre = itemPrefix(lines[i]);
         if (!pre) break;
+        // Lists do not nest (SPEC 3.4), so an item indented deeper than the
+        // first is structure about to be lost. Flattening it silently turns a
+        // formatting mistake into data loss; uniform indentation is style.
+        const indent = lines[i].length - lines[i].replace(/^[ \t]+/, '').length;
+        if (baseIndent < 0) baseIndent = indent;
+        else if (indent > baseIndent && !flagged) {
+          warnAt(i + 1, 'list item is indented deeper than the first: XTXT lists do not nest, so it is flattened');
+          flagged = true;
+        }
         let body = lines[i].replace(/^[ \t]+/, '').slice(pre.length).trim();
         const item = { text: '', ordered: pre[0] >= '0' && pre[0] <= '9', checked: null };
         if (body.length >= 3 && body[0] === '[' && body[2] === ']' && ' xX'.includes(body[1])) {
