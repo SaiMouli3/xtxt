@@ -55,3 +55,15 @@ figure.chart { margin:2em 0; text-align:left; }
 .footnotes { margin-top:3em; padding-top:1.2em; border-top:1px solid var(--rule); font-size:.88rem; color:var(--muted); }
 .footnotes li { margin-bottom:.4em; }
 .fnback { text-decoration:none; }
+
+/* A chart a @table asked for, and the affordances the runtime adds to it.
+   All of this is optional: without the script the readout and legend never
+   appear, and the chart plus its table are still the whole story. */
+.chart-warning { color:var(--muted); font-size:.82rem; margin:.3em 0 1.2em; }
+.xtxt-chart-readout { min-height:1.3em; margin:.2em 0 0; font-size:.85rem; color:var(--muted);
+  font-family:ui-sans-serif,system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+.xtxt-chart-legend { display:flex; flex-wrap:wrap; gap:.4em; margin-top:.4em; }
+.xtxt-chart-toggle { font-family:ui-sans-serif,system-ui,sans-serif; font-size:.78rem;
+  cursor:pointer; padding:.15em .6em; border-radius:999px; color:inherit;
+  background:transparent; border:1px solid var(--rule); }
+.xtxt-chart-toggle[aria-pressed="false"] { opacity:.45; text-decoration:line-through; }

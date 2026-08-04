@@ -11,6 +11,7 @@
  */
 
 import { Buffer } from 'node:buffer';
+import { randomBytes } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
@@ -18,7 +19,11 @@ import * as vscode from 'vscode';
 
 import { extract, parse, renderHTML, sortIssues, validate } from 'xtxt-js';
 
-import { blockRanges } from './blocks';
+/** Injected by esbuild from assets/chart-runtime.js — see esbuild.config.mjs. */
+declare const __CHART_RUNTIME__: string;
+const CHART_RUNTIME = __CHART_RUNTIME__;
+
+import { blockRanges, headerCells } from './blocks';
 import { isUnder } from './paths';
 
 const run = promisify(execFile);
@@ -33,6 +38,8 @@ export function activate(context: vscode.ExtensionContext): void {
     diagnostics,
     vscode.commands.registerCommand('xtxt.showPreview', () => previews.show()),
     vscode.commands.registerCommand('xtxt.pasteImage', () => pasteImage()),
+    vscode.commands.registerCommand('xtxt.chartTable',
+      (uri?: vscode.Uri, line?: number) => chartTable(uri, line)),
 
     // Re-render as you type, not only on save: a preview that lags behind the
     // buffer is worse than no preview, because you stop trusting it.
@@ -51,6 +58,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.languages.registerDocumentSymbolProvider(SELECTOR, new SymbolProvider()),
     vscode.languages.registerFoldingRangeProvider(SELECTOR, new FoldingProvider()),
+    vscode.languages.registerCodeLensProvider(SELECTOR, new ChartLensProvider()),
 
     // Cmd+V with an image on the clipboard, handled where people expect it.
     vscode.languages.registerDocumentPasteEditProvider(
@@ -217,6 +225,100 @@ function lines(document: vscode.TextDocument): string[] {
 }
 
 // ---------------------------------------------------------------------------
+// Charting a table
+// ---------------------------------------------------------------------------
+
+const CHART_TYPES = ['bar', 'line', 'area', 'stacked', 'pie'];
+
+/** An offer to chart, on the line of every `@table`. */
+class ChartLensProvider implements vscode.CodeLensProvider {
+  provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+    return blockRanges(lines(document))
+      .filter((b) => b.name === 'table')
+      .map((b) => new vscode.CodeLens(new vscode.Range(b.start, 0, b.start, 0), {
+        title: document.lineAt(b.start).text.includes('chart=')
+          ? '$(graph) Change chart' : '$(graph) Chart this table',
+        command: 'xtxt.chartTable',
+        arguments: [document.uri, b.start],
+      }));
+  }
+}
+
+/**
+ * Writes chart arguments onto a `@table`. Three QuickPicks rather than a form:
+ * the whole decision is a type and two column choices, and a webview for that
+ * would be more chrome than question.
+ */
+async function chartTable(uri?: vscode.Uri, startLine?: number): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  const document = uri
+    ? await vscode.workspace.openTextDocument(uri)
+    : editor?.document;
+  if (!document || document.languageId !== 'xtxt') {
+    void vscode.window.showInformationMessage('Open an .xtxt file first.');
+    return;
+  }
+
+  const tables = blockRanges(lines(document)).filter((b) => b.name === 'table');
+  // Invoked from the palette rather than the lens: chart the table the cursor
+  // is in, which is the only one the author can mean.
+  const cursor = editor?.selection.active.line ?? 0;
+  const block = startLine !== undefined
+    ? tables.find((b) => b.start === startLine)
+    : tables.find((b) => cursor >= b.start && cursor <= b.end);
+  if (!block) {
+    void vscode.window.showInformationMessage('Put the cursor inside an @table block.');
+    return;
+  }
+
+  const columns = headerCells(lines(document), block);
+  if (columns.length === 0) {
+    void vscode.window.showWarningMessage('That table has no header row to chart.');
+    return;
+  }
+
+  const type = await vscode.window.showQuickPick(CHART_TYPES,
+    { title: 'Chart type', placeHolder: 'How should the rows be drawn?' });
+  if (!type) return;
+
+  const x = await vscode.window.showQuickPick(columns,
+    { title: 'Labels', placeHolder: 'Which column names each row?' });
+  if (!x) return;
+
+  const y = await vscode.window.showQuickPick(columns.filter((c) => c !== x),
+    { title: 'Values', placeHolder: 'Which columns hold the numbers?', canPickMany: true });
+  if (!y || y.length === 0) return;
+
+  const edit = new vscode.WorkspaceEdit();
+  edit.replace(document.uri, document.lineAt(block.start).range,
+    tableLine(document, block, { chart: type, x, y: y.join(', ') }));
+  await vscode.workspace.applyEdit(edit);
+}
+
+/**
+ * Rebuilds the `@table(…)` line with new chart arguments, keeping any the
+ * picker does not ask about — a title or unit the author wrote by hand should
+ * survive being re-charted.
+ */
+function tableLine(
+  document: vscode.TextDocument,
+  block: { start: number },
+  set: Record<string, string>,
+): string {
+  const node = parse(document.getText()).doc.nodes
+    .find((n) => n.line === block.start + 1 && n.name === 'table');
+
+  const args: Array<[string, string]> = [];
+  for (const arg of node?.args ?? []) {
+    if (arg.key && !(arg.key in set)) args.push([arg.key, arg.value]);
+  }
+  for (const [key, value] of Object.entries(set)) args.push([key, value]);
+
+  const indent = document.lineAt(block.start).text.match(/^\s*/)?.[0] ?? '';
+  return `${indent}@table(${args.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ')})`;
+}
+
+// ---------------------------------------------------------------------------
 // Preview
 // ---------------------------------------------------------------------------
 
@@ -238,7 +340,12 @@ class PreviewManager {
         `Preview ${basename(editor.document.uri)}`,
         { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
         {
-          enableScripts: false,
+          // Scripts are on so charts can be read and filtered, but the CSP
+          // below admits exactly one script: ours, carrying a nonce minted per
+          // render. A <script> arriving through @raw(format="html") cannot
+          // carry it, so enabling this does not hand a document the ability to
+          // run code. enableCommandUris stays off, so command: links stay dead.
+          enableScripts: true,
           // Images referenced relatively must be loadable, so grant the
           // document's own folder and the workspace — and nothing else.
           localResourceRoots: resourceRoots(editor.document.uri),
@@ -347,10 +454,19 @@ function previewHTML(
         .join('')}</ul>`
     : '';
 
-  // No scripts in the webview at all, so the CSP can be maximally strict.
+  // One nonce per render. Only the chart runtime carries it, so it is the only
+  // script that can run — script-src does not fall back to default-src here,
+  // it is stated explicitly so nothing else is ever admitted.
+  const nonce = randomBytes(16).toString('base64');
   const csp =
     `default-src 'none'; img-src ${webview.cspSource} https: data:; ` +
-    `media-src ${webview.cspSource} https: data:; style-src 'unsafe-inline';`;
+    `media-src ${webview.cspSource} https: data:; style-src 'unsafe-inline'; ` +
+    `script-src 'nonce-${nonce}';`;
+
+  // Only ship the runtime when there is something for it to upgrade.
+  const runtime = body.includes('data-xtxt-chart')
+    ? `<script nonce="${nonce}">${CHART_RUNTIME}</script>`
+    : '';
 
   return `<!doctype html>
 <html lang="en">
@@ -365,6 +481,7 @@ ${problems}
 <main class="xtxt">
 ${resolveMedia(body, webview, document)}
 </main>
+${runtime}
 </body>
 </html>`;
 }
@@ -422,6 +539,18 @@ main { --chart-1: #2a78d6; --chart-2: #eb6834; --chart-3: #1baf7a;
 }
 .footnotes { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--vscode-panel-border);
              color: var(--vscode-descriptionForeground); font-size: .88rem; }
+.chart-warning { color: var(--vscode-editorWarning-foreground); font-size: .82rem;
+                 margin: .3em 0 1.2em; }
+.xtxt-chart-readout { min-height: 1.3em; margin: .2em 0 0; font-size: .85rem;
+                      color: var(--vscode-descriptionForeground);
+                      font-variant-numeric: tabular-nums; }
+.xtxt-chart-legend { display: flex; flex-wrap: wrap; gap: .4em; margin-top: .4em; }
+.xtxt-chart-toggle { font: inherit; font-size: .78rem; cursor: pointer;
+                     padding: .15em .6em; border-radius: 999px;
+                     color: var(--vscode-foreground);
+                     background: var(--vscode-editor-background);
+                     border: 1px solid var(--vscode-panel-border); }
+.xtxt-chart-toggle[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
 `;
 
 // ---------------------------------------------------------------------------

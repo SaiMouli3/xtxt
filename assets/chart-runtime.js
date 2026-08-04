@@ -76,6 +76,7 @@
     }
     var svg = figure.querySelector('svg');
     if (!chart || !chart.labels || !chart.series || !chart.series.length || !svg) return;
+    if (figure.getAttribute('data-xtxt-interactive')) return; // already upgraded
 
     var hidden = chart.series.map(function () { return false; });
 
@@ -127,6 +128,11 @@
   function start() {
     each(document.querySelectorAll('[data-xtxt-chart]'), upgrade);
   }
+
+  // Exposed so a host that re-renders — the browser demo as you type, an
+  // editor preview — can upgrade the new charts without reloading the script.
+  // Upgrading twice is harmless: an already-upgraded figure is skipped.
+  window.xtxtCharts = start;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);

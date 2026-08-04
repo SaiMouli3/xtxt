@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { blockRanges } from './blocks';
+import { blockRanges, headerCells } from './blocks';
 import { isUnder } from './paths';
 
 test('pairs a block and leaves a single-line directive alone', () => {
@@ -54,4 +54,22 @@ test('isUnder rejects an escape and a shared prefix', () => {
   assert.equal(isUnder('/work/notes', '/'), false);
   // The reason a bare startsWith is not enough.
   assert.equal(isUnder('/work/notes', '/work/notes-evil/a.png'), false);
+});
+
+test('headerCells skips the separator row, not the header', () => {
+  const lines = ['@table(chart="bar")', 'Month | Signups', '------|--------', 'Jan | 20', '@endtable'];
+  const [block] = blockRanges(lines);
+  assert.deepEqual(headerCells(lines, block), ['Month', 'Signups']);
+});
+
+test('headerCells reads a table that has no separator', () => {
+  const lines = ['@table', 'Name | Age', 'John | 20', '@endtable'];
+  const [block] = blockRanges(lines);
+  assert.deepEqual(headerCells(lines, block), ['Name', 'Age']);
+});
+
+test('headerCells gives nothing for an empty table', () => {
+  const lines = ['@table', '@endtable'];
+  const [block] = blockRanges(lines);
+  assert.deepEqual(headerCells(lines, block), []);
 });

@@ -28,6 +28,22 @@ Owner: Subbu
 @endtask
 ```
 
+A table can draw itself, so the numbers and the picture never disagree:
+
+```text
+@table(chart="bar", x="Month", y="Signups")
+Month | Signups
+------|--------
+Jan   | 20
+Feb   | 35
+@endtable
+```
+
+Add a row and the chart follows. The table is still rendered underneath, so
+the figures stay readable as text — and `xtxt export html --interactive` adds
+a value readout and a per-series toggle without the default export ever
+carrying a script.
+
 That `@task` is not a comment or a convention — it is a block the parser
 returns and `xtxt extract` hands to an agent as JSON. Everything non-textual
 uses one syntax: `@name(args)` for a single item, `@name … @endname` for a

@@ -18,6 +18,9 @@ Syntax highlighting, live preview and image pasting for the
   never errors
 - **Outline** — headings *and* records, so `Cmd+Shift+O`, the breadcrumb bar
   and the Outline view jump straight to a `@task` or `@decision`
+- **Chart a table** — a `Chart this table` action on every `@table` picks the
+  type, the label column and the value columns, and writes them onto the block.
+  The preview draws the chart and lets you read values off it and hide a series
 - **Folding** on `@block` / `@endblock` and on headings, and `@comment`
   toggling
 

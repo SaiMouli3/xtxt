@@ -1,6 +1,6 @@
 # Charts from tables, and an interactive view of them
 
-Status: approved, not yet implemented
+Status: implemented
 Date: 2026-08-04
 
 ## The ask
@@ -80,8 +80,12 @@ Feb   | 35      | 2400
 `chart` both enables the chart and names its type. Without it, behaviour is
 exactly what it is today.
 
-**Semantics.** A non-numeric cell is a gap, not a zero — zero is a claim the
-document did not make. An unknown column in `x` or `y`, an unrecognised chart
+**Semantics.** A non-numeric cell charts as zero and records a warning. The
+design called for a gap, on the grounds that zero is a claim the document did
+not make — but the SVG builders format coordinates with `%.1f`, so an absent
+point would emit `NaN` into path data. Real gaps mean teaching all three
+builders in both languages about missing values, and that is its own change.
+The warning is the honest signal until then. An unknown column in `x` or `y`, an unrecognised chart
 type, or a table with no numeric column each fall back (to the default column,
 to `bar`, to table-only) and record a renderer warning.
 
@@ -118,8 +122,20 @@ The renderer emits the chart's numbers as JSON in a `data-chart` attribute on
 the figure. The runtime finds each figure and adds:
 
 - a hover readout of the value under the pointer,
-- legend entries that toggle a series,
-- a control that switches between the chart types valid for the data.
+- legend entries that toggle a series.
+
+**Reader-side type switching was cut during implementation.** Redrawing in the
+browser needs a chart renderer in the runtime — a third implementation beside
+Go and the JS SDK, which is exactly the drift the "one shared asset" idea was
+meant to prevent. It does not prevent it for anything that redraws. Choosing
+the type is the author's job, which the picker already covers, so the runtime
+now offers only what needs no drawing. Bundling the SDK renderer into the
+runtime would restore it with one renderer; that is a later change if readers
+ask for it.
+
+The first draft also queried a `data-index` attribute no renderer emitted, so
+hover would have done nothing. Both renderers now emit `data-index` and
+`data-series`, verified identical between them.
 
 Hosts:
 

@@ -1,5 +1,12 @@
 import esbuild from 'esbuild';
+import { readFileSync } from 'node:fs';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+// The same file the Go renderer embeds, inlined here at build time so the
+// preview and `xtxt export --interactive` cannot ship different behaviour.
+const runtime = readFileSync(
+  fileURLToPath(new URL('../../assets/chart-runtime.js', import.meta.url)), 'utf8');
 
 const production = process.argv.includes('production');
 
@@ -12,6 +19,7 @@ const context = await esbuild.context({
   platform: 'node',
   target: 'node18',
   outfile: 'out/extension.js',
+  define: { __CHART_RUNTIME__: JSON.stringify(runtime) },
   sourcemap: !production,
   minify: production,
   logLevel: 'info',

@@ -125,6 +125,7 @@
 
 </div>
 
+<script src="./chart-runtime.js" defer></script>
 <script type="module">
 import { parse, validate, extract, renderHTML } from './xtxt.js';
 
@@ -291,6 +292,8 @@ function update() {
     outTitle.textContent = 'Rendered';
     out.innerHTML = '<div class="xtxt-preview"></div>';
     out.firstElementChild.innerHTML = renderHTML(res.doc);
+    // Charts render without this; it only adds the readout and the legend.
+    if (window.xtxtCharts) window.xtxtCharts();
   } else {
     outTitle.textContent = 'xtxt extract';
     const pre = document.createElement('pre');

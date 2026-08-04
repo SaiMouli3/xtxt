@@ -62,3 +62,21 @@ export function blockRanges(lines: readonly string[]): BlockRange[] {
   // unterminated block the parser is already reporting as an error.
   return out;
 }
+
+/**
+ * The header cells of a table block, in order.
+ *
+ * Kept here with the other pure line work so the picker's column list can be
+ * tested: the separator row is punctuation rather than a header, and skipping
+ * it is the part that is easy to get wrong.
+ */
+export function headerCells(lines: readonly string[], block: BlockRange): string[] {
+  for (let i = block.start + 1; i < block.end; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cells = line.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+    if (cells.every((c) => c && !c.replace(/[-:]/g, ''))) continue;
+    return cells.filter(Boolean);
+  }
+  return [];
+}

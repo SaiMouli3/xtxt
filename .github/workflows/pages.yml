@@ -28,7 +28,7 @@ jobs:
           mkdir -p _site
           cp docs/index.html _site/
           cp sdk/js/xtxt.js sdk/js/chart.js _site/
-          cp assets/xtxt.css _site/
+          cp assets/xtxt.css assets/chart-runtime.js _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -222,6 +222,31 @@ John | 20
 
 A table without a separator has its first row as the header.
 
+A `@table` may also ask to be drawn as a chart over its own rows:
+
+```
+@table(chart="bar", x="Month", y="Signups, Revenue", title="Growth")
+Month | Signups | Revenue
+------|---------|--------
+Jan   | 20      | 1200
+Feb   | 35      | 2400
+@endtable
+```
+
+`chart` names the type and is what enables the chart; the values are those of
+`@chart` (§5.5). `x` names the label column and defaults to the first; `y` is a
+comma-separated list of value columns and defaults to every other column that
+holds a number. `title` and `unit` carry through to the chart.
+
+A renderer that draws the chart MUST still render the table, which is what
+keeps the numbers reachable as text. A reader that does not recognise these
+arguments ignores them and renders the table alone, so the document is
+readable either way.
+
+Values that do not parse as numbers, and names in `x` or `y` that match no
+column, are reported however the implementation reports chart problems; they
+never make the document invalid.
+
 ### 5.2 `metadata` payload
 
 `key = value`, one per line. Keys are case-insensitive and trimmed. A document
