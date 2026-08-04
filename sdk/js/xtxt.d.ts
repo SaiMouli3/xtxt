@@ -226,6 +226,22 @@ export interface Chart {
 
 export declare function parseChart(n: Node): Chart;
 
+/**
+ * Reads a `@table` carrying a `chart=` argument as a chart over its own rows.
+ * Takes the parsed table rather than parsing it, so the chart module does not
+ * have to import the parser. Null when the table asks for no chart.
+ */
+export declare function tableChart(n: Node, table: Table): Chart | null;
+
+/**
+ * The chart's numbers as JSON, for the interactive runtime to read back out of
+ * the DOM. Matches the Go renderer byte for byte.
+ */
+export declare function chartData(c: Chart): string;
+
+/** The chart a `@table` asked for, above the table itself. */
+export declare function renderTableChart(n: Node, table: Table): string;
+
 /** Draw a chart as script-free inline SVG. */
 export declare function renderChartSVG(c: Chart): string;
 
