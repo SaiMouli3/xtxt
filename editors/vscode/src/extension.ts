@@ -285,12 +285,39 @@ function resourceRoots(uri: vscode.Uri): vscode.Uri[] {
   return roots;
 }
 
-/** Whether `target` is one of `roots` or sits underneath one of them. */
-function contains(roots: vscode.Uri[], target: vscode.Uri): boolean {
-  return roots.some((root) =>
+/** The first of `roots` that `target` is, or sits underneath. */
+function containingRoot(roots: vscode.Uri[], target: vscode.Uri): vscode.Uri | undefined {
+  return roots.find((root) =>
     root.scheme === target.scheme &&
     root.authority === target.authority &&
     isUnder(root.path, target.path));
+}
+
+/**
+ * Whether writing to `target` stays inside one of `roots` — in fact, not just
+ * on paper.
+ *
+ * Comparing paths is not enough by itself. A repository can commit a symlink,
+ * so `img` can satisfy every lexical check and still land in `~/.ssh`; the
+ * filesystem follows it on write. Walking the segments and refusing any link
+ * is what makes the check mean what it says.
+ */
+async function writable(roots: vscode.Uri[], target: vscode.Uri): Promise<boolean> {
+  const root = containingRoot(roots, target);
+  if (!root) return false;
+
+  let at = root;
+  for (const segment of target.path.slice(root.path.length).split('/').filter(Boolean)) {
+    at = vscode.Uri.joinPath(at, segment);
+    let stat: vscode.FileStat;
+    try {
+      stat = await vscode.workspace.fs.stat(at);
+    } catch {
+      return true; // Nothing here yet, so there is no link to follow.
+    }
+    if (stat.type & vscode.FileType.SymbolicLink) return false;
+  }
+  return true;
 }
 
 /** Rewrite relative media sources so the webview can actually load them. */
@@ -469,7 +496,7 @@ async function storeImage(
   // The setting is window-scoped, so a repository can set it in its own
   // .vscode/settings.json. Opening someone else's project must not let it
   // choose where this extension creates directories and writes files.
-  if (folder && !contains(resourceRoots(document.uri), dir)) {
+  if (folder && !await writable(resourceRoots(document.uri), dir)) {
     void vscode.window.showWarningMessage(
       `Ignoring xtxt.paste.folder "${folder}": it points outside the workspace.`);
     folder = '';

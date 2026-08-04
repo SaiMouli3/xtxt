@@ -2,7 +2,7 @@
   "name": "xtxt",
   "displayName": "XTXT",
   "description": "Syntax highlighting, live preview and image pasting for the XTXT document format",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "xtxt",
   "license": "MIT",
   "icon": "images/icon.png",
