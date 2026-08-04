@@ -118,7 +118,7 @@ Progressive enhancement over what already renders. The static SVG and the
 visible table are the document; the runtime upgrades them in place. With
 JavaScript unavailable, nothing is lost and §5.5 still holds.
 
-The renderer emits the chart's numbers as JSON in a `data-chart` attribute on
+The renderer emits the chart's numbers as JSON in a `data-xtxt-chart` attribute on
 the figure. The runtime finds each figure and adds:
 
 - a hover readout of the value under the pointer,
@@ -147,7 +147,7 @@ Hosts:
 - **Browser demo** — always on.
 
 **Testing.** The runtime's logic is written as pure functions — which series
-are visible, what the readout says, which types are offered — tested with
+are visible, what the readout says, whether a series may be hidden — tested with
 `node --test`. The DOM glue stays thin and deliberately untested rather than
 introducing a browser harness for it.
 
