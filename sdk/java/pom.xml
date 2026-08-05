@@ -8,7 +8,7 @@
        domain, which is why the coordinates look like this. -->
   <groupId>io.github.saimouli3</groupId>
   <artifactId>xtxt</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <packaging>jar</packaging>
 
   <name>xtxt</name>

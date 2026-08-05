@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xtxt"
-version = "0.2.0"
+version = "0.3.0"
 description = "Parser and renderer for the XTXT plain-text document format"
 readme = "README.md"
 requires-python = ">=3.10"
