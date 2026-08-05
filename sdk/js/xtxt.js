@@ -809,12 +809,30 @@ export const canonicalIssues = (issues) =>
 // ---------------------------------------------------------------------------
 
 /** Render to HTML. `full` wraps the result in a standalone document. */
+/**
+ * Turns heading text into an anchor. Byte-identical to the Go renderer: a link
+ * written against one renderer's output must not break under the other.
+ */
+function headingSlug(text, used) {
+  let slug = [...inlineText(text).toLowerCase()]
+    .map((c) => ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ? c
+      : (c === ' ' || c === '-' || c === '_') ? '-' : ''))
+    .join('')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (!slug) slug = 'section';
+  const n = (used.get(slug) ?? 0) + 1;
+  used.set(slug, n);
+  return n > 1 ? `${slug}-${n - 1}` : slug;
+}
+
 export function renderHTML(doc, { full = false, title = '' } = {}) {
   const body = [];
   const notes = [];
+  const slugs = new Map();
   for (const n of doc.nodes) {
     switch (n.kind) {
-      case 'heading': body.push(`<h${n.level}>${inlineHTML(n.text)}</h${n.level}>`); break;
+      case 'heading': body.push(`<h${n.level} id="${escapeHTML(headingSlug(n.text, slugs))}">${inlineHTML(n.text)}</h${n.level}>`); break;
       case 'paragraph': body.push(`<p>${inlineHTML(n.text)}</p>`); break;
       case 'quote': body.push(`<blockquote><p>${inlineHTML(n.text)}</p></blockquote>`); break;
       case 'list': body.push(listHTML(n)); break;

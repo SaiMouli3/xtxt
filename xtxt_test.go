@@ -304,7 +304,7 @@ func TestRenderTextTableAligns(t *testing.T) {
 
 func TestFullHTMLDocument(t *testing.T) {
 	out := RenderHTML(parse(t, "# Hello\n\nworld\n"), HTMLOptions{Full: true})
-	for _, want := range []string{"<!doctype html>", "<title>Hello</title>", "<h1>Hello</h1>", "<p>world</p>"} {
+	for _, want := range []string{"<!doctype html>", "<title>Hello</title>", "<h1 id=\"hello\">Hello</h1>", "<p>world</p>"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q", want)
 		}

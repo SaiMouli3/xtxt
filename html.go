@@ -82,13 +82,44 @@ func hasDirective(doc *Document, name string) bool {
 	return false
 }
 
+// headingSlug turns heading text into an anchor. Documents need linkable
+// sections, and a table of contents cannot exist without them.
+//
+// Kept byte-identical to the JavaScript renderer: a link written against one
+// renderer's output must not break under the other.
+func headingSlug(text string, used map[string]int) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(InlineText(text)) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == ' ', r == '-', r == '_':
+			b.WriteByte('-')
+		}
+	}
+	slug := strings.Trim(b.String(), "-")
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+	if slug == "" {
+		slug = "section"
+	}
+	used[slug]++
+	if n := used[slug]; n > 1 {
+		slug += "-" + itoa(n-1)
+	}
+	return slug
+}
+
 func renderBody(doc *Document, opt HTMLOptions) string {
 	var b strings.Builder
 	var notes []Node
+	slugs := map[string]int{}
 	for _, n := range doc.Nodes {
 		switch n.Kind {
 		case KindHeading:
-			fmt.Fprintf(&b, "<h%d>%s</h%d>\n", n.Level, InlineHTML(n.Text), n.Level)
+			fmt.Fprintf(&b, "<h%d id=\"%s\">%s</h%d>\n",
+				n.Level, html.EscapeString(headingSlug(n.Text, slugs)), InlineHTML(n.Text), n.Level)
 		case KindParagraph:
 			fmt.Fprintf(&b, "<p>%s</p>\n", InlineHTML(n.Text))
 		case KindQuote:

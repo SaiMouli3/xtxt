@@ -1,0 +1,424 @@
+@metadata
+title = XTXT Documentation
+version = 0.3.0
+@endmetadata
+
+# XTXT Documentation
+
+Plain text that carries structure a machine can read without guessing — and
+still opens in any editor and diffs cleanly in git.
+
+This page is written in XTXT and rendered by `xtxt export`. Everything below
+describes something the tool actually does; nothing here is planned or
+aspirational.
+
+## Install
+
+Pick whichever fits how you work. The command line is the fastest way to see
+what the format does.
+
+@code(language="shell")
+# Command line (Go)
+go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest
+
+# JavaScript
+npm install xtxt-js
+
+# Python
+pip install xtxt
+
+# Rust
+cargo add xtxt
+@endcode
+
+The VS Code extension is on the Marketplace as **XTXT** — search it in the
+Extensions panel, or install from the command line:
+
+@code(language="shell")
+code --install-extension xtxt.xtxt
+@endcode
+
+## Your first document
+
+Create `notes.xtxt`:
+
+@code(language="text")
+# Project Log
+
+Neural networks are inspired by the brain, loosely.
+
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+@endtask
+@endcode
+
+Then look at it three ways:
+
+@code(language="shell")
+xtxt validate notes.xtxt    # is it well formed?
+xtxt render   notes.xtxt    # read it in the terminal
+xtxt extract  notes.xtxt    # what a machine sees
+@endcode
+
+That last command is the point of the format. `@task` is not a comment or a
+naming convention — it is a block the parser returns, and `extract` hands it to
+a program as JSON with the line it came from.
+
+# Writing
+
+## Text
+
+Headings use `#` through `######`. Paragraphs are separated by a blank line.
+Quotes begin with `>`.
+
+@code(language="text")
+# Title
+## Section
+
+A paragraph of prose.
+
+> Something worth quoting.
+@endcode
+
+Inline marks: `*emphasis*`, `**strong**`, backticks for `code`, `~~strike~~`,
+and `[text](url)` for links.
+
+## Lists
+
+@code(language="text")
+- one
+- two
+
+1. first
+2. second
+
+- [ ] not done yet
+- [x] done
+@endcode
+
+@note
+Lists do not nest. An item indented deeper than the first is reported as a
+warning rather than being silently flattened, so a formatting mistake cannot
+quietly destroy your structure.
+@endnote
+
+## Directives
+
+Everything that is not prose uses one syntax. `@name(args)` for a single item,
+`@name … @endname` for a block.
+
+@raw
+@image(src="diagram.png", caption="How it fits together", width=600)
+
+@code(language="python")
+print("hello")
+@endcode
+@endraw
+
+Arguments are `key=value` with quoted strings. The first positional argument
+maps to the directive's main attribute, so `@image("photo.png")` and
+`@image(src="photo.png")` mean the same thing.
+
+## Media
+
+@code(language="text")
+@image(src="chart.png", alt="Signups by month", caption="Growth", width=600)
+@video(src="demo.mp4", poster="thumb.png")
+@audio(src="interview.mp3", caption="Field recording")
+@attachment(src="report.pdf", name="Q3 Report")
+@endcode
+
+Sources may be relative paths or `data:` URIs. Pasting an image in VS Code or
+running `xtxt paste` writes the file and inserts the directive for you.
+
+## Tables
+
+@code(language="text")
+@table
+Name | Age
+-----|----
+John | 20
+@endtable
+@endcode
+
+The separator row is optional; without one the first row is the header. Colons
+set alignment: `---:` right, `:---:` centre.
+
+## Charts
+
+A chart can be its own block:
+
+@code(language="text")
+@chart(type="bar", title="Monthly signups")
+Jan | 20
+Feb | 35
+@endchart
+@endcode
+
+Or a table can draw itself, which keeps the numbers and the picture from ever
+disagreeing:
+
+@code(language="text")
+@table(chart="bar", x="Month", y="Signups, Revenue")
+Month | Signups | Revenue
+------|---------|--------
+Jan   | 20      | 1200
+Feb   | 35      | 2400
+@endtable
+@endcode
+
+Add a row and the chart follows. The table still renders underneath, so the
+figures stay reachable as text.
+
+Types are `bar`, `line`, `area`, `stacked` and `pie`. Charts render as inline
+SVG with no script and no dependency, themed by CSS.
+
+@table(chart="bar", x="Month", y="Signups", title="What that produces")
+Month | Signups
+------|--------
+Jan   | 20
+Feb   | 35
+Mar   | 50
+@endtable
+
+## Records
+
+A block of `Key: value` lines that a parser returns as data, sitting next to
+the prose that explains it.
+
+@code(language="text")
+@decision
+Title: Unknown directives are warnings, never errors
+Why: A reader from today must stay useful on a document written tomorrow.
+@enddecision
+@endcode
+
+Standard record types are `@task`, `@decision`, `@knowledge`, `@note`, `@ai`,
+`@prompt` and `@chat`. Field names mean nothing to the format — it guarantees
+the shape is preserved and reported, and what `Priority: High` means is your
+application's business.
+
+That is the same bargain HTML made with class names, and it is why
+`@experiment` or `@invoice` works without anyone updating a parser.
+
+## Code, maths and diagrams
+
+@raw
+@code(language="go", filename="main.go")
+fmt.Println("hi")
+@endcode
+
+@math
+E = mc^2
+@endmath
+
+@mermaid
+graph LR; A-->B;
+@endmermaid
+@endraw
+
+Pass `--mermaid` to `xtxt export` to load the diagram renderer from a CDN. It
+is off by default so output stays self-contained and offline.
+
+## Including other documents
+
+@code(language="text")
+@include(src="introduction.xtxt")
+@embed(src="api-reference.xtxt")
+@endcode
+
+`@include` splices the target's blocks in place. `@embed` does the same but
+demotes its headings by one level, so it nests under the including section
+instead of competing with it. Use `--resolve` to expand them.
+
+A resolver refuses absolute paths, anything escaping the including document's
+directory, and remote sources unless the host opts in. It also bounds nesting
+depth and total expansion, so a document cannot become a way to read arbitrary
+files or exhaust memory.
+
+## Metadata, comments and escaping
+
+@code(language="text")
+@metadata
+title = Project Log
+author = Subbu
+@endmetadata
+
+@comment
+Never rendered. Notes to yourself live here.
+@endcomment
+@endcode
+
+A backslash escapes any mark that would otherwise be read as syntax: `\*not
+emphasis\*`.
+
+# What a machine sees
+
+## extract
+
+`xtxt extract` returns everything an agent needs without inferring any of it
+from prose.
+
+@code(language="shell")
+xtxt extract notes.xtxt
+@endcode
+
+@code(language="json")
+{
+  "outline": [{"level": 1, "text": "Project Log", "line": 1}],
+  "tasks":   [{"title": "Ship the reference parser", "status": "In Progress",
+               "owner": "Subbu", "done": false, "line": 5}],
+  "blocks":  [{"type": "decision", "fields": {"title": "…", "why": "…"}}],
+  "links": [], "media": [], "code": [], "words": 412
+}
+@endcode
+
+Every entry carries a line number, so anything a program extracts can be
+traced back to the source that produced it.
+
+## ast
+
+`xtxt ast` prints the parse tree itself — the same shape every implementation
+is required to produce, and what the conformance suite pins.
+
+# Command line
+
+@table
+Command | What it does
+--------|-------------
+`xtxt validate <file>` | Check syntax and report problems
+`xtxt lint <file>` | Validate, plus style warnings
+`xtxt render <file>` | Render to the terminal
+`xtxt export <file> <format>` | Convert to html, body, md, text or json
+`xtxt import <file.md>` | Convert Markdown to XTXT
+`xtxt ast <file>` | Print the parse tree as JSON
+`xtxt extract <file>` | Print the machine-facing view as JSON
+`xtxt paste <file>` | Append the clipboard image to a document
+@endtable
+
+Useful flags:
+
+- `--resolve` expands `@include` and `@embed` before rendering
+- `--interactive` inlines the script that lets a reader read values off a
+  chart and hide a series; without it, exported HTML stays script-free
+- `--mermaid` loads the diagram renderer from a CDN
+- `-o <path>` writes to a file instead of stdout
+- `-w <n>` sets the wrap column for text output
+
+Use `-` as the filename to read from standard input.
+
+## Diagnostics
+
+Validation reports two levels. An **error** means the file cannot be
+interpreted unambiguously — an unclosed fence, an unclosed argument list. A
+**warning** means it parses but is suspect — an unknown directive, a table row
+with the wrong cell count.
+
+`xtxt validate` exits non-zero only on errors. An unknown directive is never an
+error, which is what lets a reader from today stay useful on a document written
+tomorrow.
+
+# Editors
+
+## VS Code
+
+Install **XTXT** from the Marketplace. It gives you:
+
+- syntax highlighting, with `@code(language="…")` blocks highlighted in their
+  own language
+- a live preview that re-renders as you type, opened with `Cmd+K V`
+- problems and squiggles in the editor and the Problems panel
+- an outline covering headings **and** records, so `Cmd+Shift+O` jumps straight
+  to a `@task` or `@decision`
+- folding on blocks and headings
+- image paste with `Cmd+V`, saved beside the document or embedded as a `data:`
+  URI
+- a `Chart this table` action that picks the type, the label column and the
+  value columns
+
+## Obsidian
+
+The plugin renders XTXT documents and supports image paste.
+
+# Libraries
+
+@table
+Language | Package | Parses | Renders
+---------|---------|--------|--------
+Go | `github.com/SaiMouli3/xtxt` | yes | yes
+JavaScript | `xtxt-js` | yes | yes
+Python | `xtxt` | yes | no
+Rust | `xtxt` | yes | no
+Java | `io.github.saimouli3:xtxt` | yes | no
+C | `sdk/c` | yes | no
+C++ | `sdk/cpp` | yes | no
+@endtable
+
+Every implementation is checked against the same conformance fixtures, which
+pin the parse tree and the severity of every diagnostic — deliberately not the
+wording, because implementations should agree on what is wrong, not on how to
+phrase the complaint.
+
+None of them has a runtime dependency.
+
+## Using the library
+
+@code(language="javascript")
+import { parse, validate, extract, renderHTML } from 'xtxt-js';
+
+const res = parse(source);
+const issues = [...res.issues, ...validate(res.doc)];
+const data = extract(res.doc);
+const html = renderHTML(res.doc, { full: true });
+@endcode
+
+@code(language="python")
+import xtxt
+
+doc = xtxt.parse(source)
+for issue in doc.issues:
+    print(issue.severity, issue.line, issue.message)
+@endcode
+
+## MCP server
+
+`xtxt-mcp` lets an agent read and write XTXT documents directly.
+
+@code(language="shell")
+npx xtxt-mcp
+@endcode
+
+# What XTXT does not do
+
+Being clear about this is the point, not an apology.
+
+@note
+Title: Nothing nests
+No nested lists, and no blocks inside blocks — so an admonition containing a
+code sample is not expressible today. This keeps parsing to a single pass with
+no backtracking, and it is the format's biggest limitation.
+@endnote
+
+@note
+Title: Records have no schema yet
+A record's field names are preserved and reported, but nothing declares that
+Status is an enum or that Due is a date. Two authors can produce two
+vocabularies.
+@endnote
+
+@note
+Title: No compression, encryption, history or binary container
+Each would trade away the property the format exists for — that the bytes on
+disk are the document. These belong in a layer above: a file inside an
+encrypted volume, a signature alongside it, history in the version control
+that already does it well.
+@endnote
+
+# Reading further
+
+- [Specification](https://github.com/SaiMouli3/xtxt/blob/main/SPEC.md) — the normative definition, implementable in an afternoon
+- [Features](https://github.com/SaiMouli3/xtxt/blob/main/FEATURES.md) — the short version of this page
+- [Live demo](https://saimouli3.github.io/xtxt/) — edit XTXT, watch it render
+- [Repository](https://github.com/SaiMouli3/xtxt) — source, conformance fixtures and issues
