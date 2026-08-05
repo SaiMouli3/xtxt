@@ -342,9 +342,18 @@ A resolver MUST:
 - refuse absolute paths and any path that escapes the including document's
   directory,
 - refuse remote sources unless the host application opts in explicitly,
-- detect cycles and bound nesting depth.
+- detect cycles and bound nesting depth,
+- bound the **total** number of nodes produced by expansion.
 
 Rendering a document must never become a way to read arbitrary files.
+
+The last requirement is not implied by the one before it. Cycle detection
+tracks the path currently being expanded, so including the same file twice
+from different places is legal and should stay legal — that is a diamond, not
+a cycle. But it means depth alone does not bound the work: a file that includes
+four others, fourteen levels deep, is 268 million nodes from under 1.5 KB on
+disk. Bounding depth without bounding total expansion reads like a defence
+without being one.
 
 ### 5.7 Footnotes
 

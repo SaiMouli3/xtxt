@@ -9,6 +9,15 @@ import (
 // maxIncludeDepth bounds nesting even when no cycle exists.
 const maxIncludeDepth = 16
 
+// maxIncludeNodes bounds total expansion.
+//
+// Depth and cycle limits together do not stop fan-out: cycle detection tracks
+// the active path, so a diamond is legal, and a file that includes three
+// others sixteen levels deep is forty million nodes from a few kilobytes on
+// disk. That is the billion-laughs shape with different syntax, and bounding
+// depth alone reads like a defence without being one.
+const maxIncludeNodes = 100000
+
 // Resolve expands @include and @embed directives by splicing the referenced
 // documents in place. base is the directory that relative sources resolve
 // against, and is also a boundary: a source that escapes it, or an absolute
@@ -35,9 +44,11 @@ func Resolve(doc *Document, base string) (*Document, []Issue) {
 }
 
 type resolver struct {
-	base   string
-	active map[string]bool
-	issues []Issue
+	base      string
+	active    map[string]bool
+	issues    []Issue
+	count     int
+	exhausted bool
 }
 
 func (r *resolver) fail(line int, msg string) {
@@ -47,9 +58,20 @@ func (r *resolver) fail(line int, msg string) {
 func (r *resolver) expand(nodes []Node, depth, demote int) []Node {
 	var out []Node
 	for _, n := range nodes {
+		if r.exhausted {
+			return out
+		}
 		if n.Kind == KindDirective && (n.Name == "include" || n.Name == "embed") {
 			out = append(out, r.splice(n, depth, demote)...)
 			continue
+		}
+		// Counted after splicing so the budget measures what the reader ends up
+		// holding, not how many directives asked for it.
+		r.count++
+		if r.count > maxIncludeNodes {
+			r.fail(n.Line, "include expansion exceeded "+itoa(maxIncludeNodes)+" nodes")
+			r.exhausted = true
+			return out
 		}
 		if demote > 0 && n.Kind == KindHeading {
 			n.Level = min(n.Level+demote, 6)
@@ -60,6 +82,9 @@ func (r *resolver) expand(nodes []Node, depth, demote int) []Node {
 }
 
 func (r *resolver) splice(n Node, depth, demote int) []Node {
+	if r.exhausted {
+		return nil
+	}
 	src := n.Args.Resolve("src")
 	if src == "" {
 		r.fail(n.Line, "@"+n.Name+" has no src")
