@@ -49,6 +49,7 @@ returns and `xtxt extract` hands to an agent as JSON. Everything non-textual
 uses one syntax: `@name(args)` for a single item, `@name … @endname` for a
 block. That is the whole format. Adding a name never breaks an old reader.
 
+- **[FEATURES.md](FEATURES.md)** — what it does, and what it deliberately does not.
 - **[SPEC.md](SPEC.md)** — the format definition. Implementable in an afternoon.
 - **[Live demo](https://saimouli3.github.io/xtxt/)** — edit XTXT, watch it render.
 - **[examples/agent-notes.xtxt](examples/agent-notes.xtxt)** — every feature, aimed at agents.
