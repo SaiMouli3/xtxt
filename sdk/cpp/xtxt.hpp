@@ -672,18 +672,45 @@ inline std::string escape(std::string_view s) {
   return out;
 }
 
+/// Turn heading text into an anchor. Kept byte-identical to the Go and
+/// JavaScript renderers: a link written against one renderer's output must not
+/// break under another.
+inline std::string heading_slug(const std::string& text,
+                                std::map<std::string, int>& used) {
+  std::string s;
+  for (char c : inline_text(text)) {
+    if (c >= 'A' && c <= 'Z') {
+      s += static_cast<char>(c - 'A' + 'a');
+    } else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+      s += c;
+    } else if (c == ' ' || c == '-' || c == '_') {
+      s += '-';
+    }
+  }
+  std::string::size_type pos;
+  while ((pos = s.find("--")) != std::string::npos) s.erase(pos, 1);
+  while (!s.empty() && s.front() == '-') s.erase(s.begin());
+  while (!s.empty() && s.back() == '-') s.pop_back();
+  if (s.empty()) s = "section";
+  int seen = ++used[s];
+  if (seen > 1) s += "-" + std::to_string(seen - 1);
+  return s;
+}
+
 }  // namespace detail
 
 /// Render a document to an HTML fragment.
 inline std::string render_html(const Document& doc) {
   std::vector<std::string> body;
   std::vector<const Node*> notes;
+  std::map<std::string, int> slugs;
 
   for (const auto& n : doc.nodes) {
     switch (n.kind) {
       case Kind::Heading:
-        body.push_back("<h" + std::to_string(n.level) + ">" + inline_html(n.text) + "</h" +
-                       std::to_string(n.level) + ">");
+        body.push_back("<h" + std::to_string(n.level) + " id=\"" +
+                       detail::heading_slug(n.text, slugs) + "\">" +
+                       inline_html(n.text) + "</h" + std::to_string(n.level) + ">");
         break;
       case Kind::Paragraph:
         body.push_back("<p>" + inline_html(n.text) + "</p>");

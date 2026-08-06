@@ -111,7 +111,7 @@ test('renders to text and html', async () => {
 
   const html = (await call('xtxt_render', { path: 'agent-notes.xtxt', format: 'html' }))
     .content[0].text;
-  assert.ok(html.includes('<h1>Project Log</h1>'));
+  assert.ok(html.includes('<h1 id="project-log">Project Log</h1>'));
 });
 
 test('refuses to read outside the document root', async () => {

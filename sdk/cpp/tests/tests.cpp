@@ -98,7 +98,7 @@ void test_extract_and_render() {
   auto html = xtxt::render_html(res.doc);
   check(html.find("data-type=\"decision\"") != std::string::npos, "record rendered");
   check(html.find("<dt>Title</dt><dd>Use one pass</dd>") != std::string::npos, "record fields");
-  check(html.find("<h1>T</h1>") != std::string::npos, "heading rendered");
+  check(html.find("<h1 id=\"t\">T</h1>") != std::string::npos, "heading rendered with anchor");
 }
 
 void test_table() {
