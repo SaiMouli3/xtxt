@@ -1,0 +1,115 @@
+@metadata
+title = Records
+summary = Typed blocks a program can read without parsing prose. The reason XTXT exists.
+@endmetadata
+
+# Records
+
+This is the part that is not Markdown with extra steps.
+
+## The shape
+
+A block whose payload is `Key: value` lines:
+
+@code(language="text")
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+Due: 2026-08-15
+@endtask
+@endcode
+
+Rendered as a card:
+
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+Due: 2026-08-15
+@endtask
+
+And returned by `xtxt extract` as data:
+
+@code(language="json")
+{"title": "Ship the reference parser", "status": "In Progress",
+ "owner": "Subbu", "due": "2026-08-15", "done": false, "line": 3}
+@endcode
+
+## Why this matters
+
+Consider the same information in Markdown:
+
+@code(language="text")
+We're currently working on shipping the reference parser — Subbu
+is on it, should be done by the 15th.
+@endcode
+
+Everything a program needs is there, and none of it is reachable. Extracting it
+means writing a parser for English and being wrong sometimes. The XTXT version
+is not better prose; it is prose plus a declaration.
+
+## The standard types
+
+@table
+Type | For
+-----|----
+`@task` | A unit of work
+`@decision` | A choice and its reasoning
+`@knowledge` | A fact worth keeping
+`@note` | An aside or admonition
+`@ai` | Model output kept with its context
+`@prompt` | A prompt worth reusing
+`@chat` | A conversation turn
+@endtable
+
+None of these is special to the parser. They are named in the specification so
+that independent tools agree on the common cases.
+
+## Inventing your own
+
+@code(language="text")
+@experiment
+Hypothesis: attention improves recall on long inputs
+Dataset: wikitext-103
+Result: confirmed, +4.2 points
+@endexperiment
+@endcode
+
+That works with no parser change and no registration. A reader that does not
+know `@experiment` still returns its fields, because the format guarantees the
+*shape* is preserved and reported.
+
+## Field names mean nothing to the format
+
+XTXT guarantees that `Priority: High` is a field named Priority with the value
+High, in that position. What Priority *means* is your application's business.
+
+That is the same bargain HTML made with class names, and it is why a new record
+type works without anyone updating a parser.
+
+@note
+Title: The honest cost
+Nothing declares that Status is an enum, or that Due is a date. Two authors can
+produce two vocabularies that do not line up, and a program consuming both has
+to reconcile them itself. Schemas are the most requested missing feature and
+are covered on the Limitations page.
+@endnote
+
+## Multi-line values and body text
+
+A line without a colon is kept as part of the block's payload text, so a record
+can carry prose as well as fields:
+
+@code(language="text")
+@decision
+Title: Unknown directives are warnings, never errors
+Why: A reader from today must stay useful on a document written tomorrow.
+@enddecision
+@endcode
+
+## Checklists are records too
+
+`- [ ]` items are returned by `extract` as tasks alongside `@task` blocks, so a
+throwaway checklist and a formal record both reach a program without you having
+to choose upfront.

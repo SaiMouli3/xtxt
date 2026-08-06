@@ -1,0 +1,142 @@
+@metadata
+title = Command line
+summary = Every command, every flag, and what the exit codes mean.
+@endmetadata
+
+# Command line
+
+@code(language="shell")
+xtxt <command> <file>... [options]
+@endcode
+
+Use `-` as the filename to read from standard input.
+
+## Commands
+
+@table
+Command | What it does
+--------|-------------
+`validate` | Check syntax and report problems
+`lint` | Validate, plus style warnings
+`render` | Render to the terminal
+`export` | Convert to another format
+`import` | Convert Markdown to XTXT
+`ast` | Print the parse tree as JSON
+`extract` | Print the machine-facing view as JSON
+`paste` | Append the clipboard image to a document
+@endtable
+
+## validate and lint
+
+@code(language="shell")
+xtxt validate notes.xtxt
+xtxt lint notes.xtxt
+xtxt validate *.xtxt
+@endcode
+
+`validate` reports errors and warnings. `lint` adds style warnings on top —
+things that parse and mean what you wanted but are worth reconsidering.
+
+Exit status is non-zero only when there is an **error**. Warnings never fail a
+build, because an unknown directive is a warning and a document from the future
+must not break a pipeline built today.
+
+## render
+
+@code(language="shell")
+xtxt render notes.xtxt
+xtxt render notes.xtxt -w 100
+xtxt render notes.xtxt --no-color
+@endcode
+
+## export
+
+@code(language="shell")
+xtxt export notes.xtxt html -o notes.html
+xtxt export notes.xtxt md
+xtxt export notes.xtxt text -w 72
+@endcode
+
+@table
+Format | Output
+-------|-------
+`html` | Standalone document with styling
+`body` | HTML fragment, no `<head>`, for embedding
+`md` | CommonMark
+`text` | Plain text, wrapped
+`json` | Parse tree
+@endtable
+
+## import
+
+@code(language="shell")
+xtxt import notes.md -o notes.xtxt
+@endcode
+
+Converts CommonMark to XTXT: headings, emphasis, lists, links, tables and code
+fences all map across. Tables become `@table`, fenced code becomes `@code` with
+its language preserved.
+
+## ast and extract
+
+@code(language="shell")
+xtxt ast notes.xtxt          # the parse tree
+xtxt extract notes.xtxt      # the machine-facing view
+@endcode
+
+`ast` is the tree every implementation must produce, and what the conformance
+suite pins. `extract` is the interpreted view: outline, tasks, records, links,
+media and code, each with a line number.
+
+## paste
+
+@code(language="shell")
+xtxt paste notes.xtxt
+xtxt paste notes.xtxt --embed
+xtxt paste notes.xtxt --caption "Whiteboard" --width 600
+@endcode
+
+Reads an image from the system clipboard, writes it beside the document and
+appends the `@image` directive. Uses whatever the platform provides —
+`osascript` on macOS, PowerShell on Windows, `wl-paste` or `xclip` on Linux.
+
+## Options
+
+@table
+Flag | Effect
+-----|-------
+`--resolve` | Expand `@include` and `@embed` first
+`--interactive` | In HTML, inline the chart runtime; without it, output has no script
+`--mermaid` | In HTML, load the diagram renderer from a CDN
+`--plugins <path>` | Load a plugin manifest for unknown directives
+`-o <path>` | Write to a file instead of stdout
+`-w <n>` | Wrap column for text output, default 80
+`--no-color` | Disable ANSI colour
+@endtable
+
+## Diagnostics
+
+@code(language="text")
+notes.xtxt:14: error: unclosed @code block: no matching @endcode
+notes.xtxt:22: warning: unknown directive @youtube (preserved, but this reader cannot render it)
+@endcode
+
+@table
+Level | Meaning
+------|--------
+error | The file cannot be interpreted unambiguously
+warning | It parses, but something is suspect
+@endtable
+
+## In CI
+
+@code(language="shell")
+xtxt validate docs/**/*.xtxt || exit 1
+@endcode
+
+Because warnings do not affect exit status, this fails only on genuine
+breakage. To be stricter, read the JSON and decide for yourself:
+
+@code(language="shell")
+xtxt ast notes.xtxt | jq -e '.issues | length == 0'
+@endcode

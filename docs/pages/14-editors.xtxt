@@ -1,0 +1,77 @@
+@metadata
+title = Editors
+summary = The VS Code extension and the Obsidian plugin.
+@endmetadata
+
+# Editors
+
+## VS Code
+
+@code(language="shell")
+code --install-extension xtxt.xtxt
+@endcode
+
+### Preview
+
+`Cmd+K V` (`Ctrl+K V`) opens a preview beside the editor that re-renders as you
+type. Records appear as cards, charts as inline SVG, and relative images
+resolve against the document.
+
+VS Code cannot draw images inline in a text editor — no extension API exposes
+that — so the preview panel is where you see them, the same way Markdown works.
+
+### Problems as you type
+
+Everything `xtxt validate` reports appears as squiggles and in the Problems
+panel, live. Unknown directives are warnings, never errors, so an experimental
+directive does not paint the file red.
+
+### Outline
+
+`Cmd+Shift+O`, the breadcrumb bar and the Outline view show headings **and**
+records, so you can jump straight to a `@task` or `@decision` rather than
+hunting for it. Records are labelled with their Title when they have one.
+
+### Folding
+
+Blocks fold on `@name` / `@endname`, and headings fold to the next heading of
+the same or higher rank.
+
+### Pasting images
+
+`Cmd+V` with an image on the clipboard writes the file beside the document and
+inserts the directive. `Cmd+Alt+V` forces it when the platform does not hand
+the image to VS Code.
+
+@table
+Setting | Default | Meaning
+--------|---------|--------
+`xtxt.paste.embed` | `false` | Inline as a `data:` URI instead of saving a file
+`xtxt.paste.folder` | `""` | Subfolder for pasted images, relative to the document
+@endtable
+
+A folder that resolves outside the workspace is refused, including by way of a
+symlink — a repository you cloned should not be able to choose where an
+extension writes.
+
+### Charting a table
+
+A `Chart this table` action appears above every `@table`. It asks for the chart
+type, the label column and the value columns, then writes them onto the block.
+Existing arguments you wrote by hand are kept.
+
+### Trust
+
+The extension stays disabled until a folder is trusted, because it writes files
+and reads the system clipboard.
+
+## Obsidian
+
+The plugin renders XTXT documents in preview and supports image paste. It lives
+in `integrations/obsidian` in the repository.
+
+## Other editors
+
+There is no tree-sitter grammar yet, which is what Neovim, Helix, Zed and
+GitHub's own highlighting would use. It is the single highest-leverage piece of
+tooling the project is missing.

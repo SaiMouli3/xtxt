@@ -1,0 +1,87 @@
+@metadata
+title = Composition
+summary = Splitting a document across files with include and embed, safely.
+@endmetadata
+
+# Composition
+
+## Including another document
+
+@code(language="text")
+@include(src="introduction.xtxt")
+@endcode
+
+Splices the target's blocks in place, unchanged.
+
+## Embedding under a section
+
+@code(language="text")
+## Reference
+
+@embed(src="api-reference.xtxt")
+@endcode
+
+The same, but the target's headings are demoted so it nests beneath the
+including section instead of competing with it. A `# Title` inside an embedded
+file becomes `##` when embedded under a `#` heading.
+
+Use `@include` when the pieces are peers, `@embed` when one belongs inside the
+other.
+
+## Resolving
+
+Neither is expanded unless you ask:
+
+@code(language="shell")
+xtxt export book.xtxt html --resolve
+xtxt validate book.xtxt --resolve
+@endcode
+
+Without `--resolve` the directive is preserved as-is. That is deliberate: a
+tool that only wants to read the document's own structure should not have to
+touch the filesystem.
+
+## What a resolver refuses
+
+Rendering a document must never become a way to read arbitrary files, so a
+resolver is required to refuse:
+
+- absolute paths
+- any path that escapes the including document's directory
+- remote sources, unless the host application opts in explicitly
+
+It must also detect cycles, bound nesting depth, and bound the *total* number
+of nodes produced.
+
+@note
+Title: Why the total matters separately
+Cycle detection tracks the path currently being expanded, so including the same
+file twice from different places is legal — that is a diamond, not a cycle, and
+it should stay legal. But it means depth alone does not bound the work: a file
+that includes four others, fourteen levels deep, is 268 million nodes from
+under 1.5 KB on disk. Bounding depth without bounding total expansion looks
+like a defence without being one.
+@endnote
+
+## A book layout
+
+@code(language="text")
+book.xtxt
+chapters/01-introduction.xtxt
+chapters/02-method.xtxt
+@endcode
+
+@code(language="text")
+@metadata
+title = The Book
+@endmetadata
+
+# The Book
+
+@embed(src="chapters/01-introduction.xtxt")
+@embed(src="chapters/02-method.xtxt")
+@endcode
+
+@code(language="shell")
+xtxt export book.xtxt html --resolve -o book.html
+@endcode

@@ -1,0 +1,135 @@
+@metadata
+title = Tables and charts
+summary = Pipe tables, alignment, and turning a table into a chart.
+@endmetadata
+
+# Tables and charts
+
+## Tables
+
+@code(language="text")
+@table
+Name | Age
+-----|----
+John | 20
+Ada  | 36
+@endtable
+@endcode
+
+Cells are separated by `|`. Leading and trailing pipes are optional, and
+whitespace around cells is trimmed, so you can align the source however reads
+best.
+
+The separator row is optional. Without one, the first row is the header.
+
+## Alignment
+
+Colons in the separator row set column alignment:
+
+@code(language="text")
+@table
+Item      | Qty | Price
+:---------|:---:|------:
+Widget    |  3  |  4.50
+@endtable
+@endcode
+
+Left, centre, right. A row with a different cell count than the header is a
+warning, not an error — the table still renders.
+
+## Charts
+
+A chart can stand alone:
+
+@code(language="text")
+@chart(type="bar", title="Monthly signups", unit="users")
+Jan | 20
+Feb | 35
+Mar | 50
+@endchart
+@endcode
+
+Rows accept `Label | 20`, `Label: 20` or `Label 20`. A first row whose trailing
+cells are not numbers is read as a header naming the series.
+
+## Charts from tables
+
+Better: let the table draw itself, so the numbers and the picture cannot
+disagree.
+
+@code(language="text")
+@table(chart="bar", x="Month", y="Signups, Revenue", title="Growth")
+Month | Signups | Revenue
+------|---------|--------
+Jan   | 20      | 1200
+Feb   | 35      | 2400
+Mar   | 50      | 3100
+@endtable
+@endcode
+
+Which renders as:
+
+@table(chart="bar", x="Month", y="Signups, Revenue", title="Growth")
+Month | Signups | Revenue
+------|---------|--------
+Jan   | 20      | 1200
+Feb   | 35      | 2400
+Mar   | 50      | 3100
+@endtable
+
+Add a row and the chart follows. The table is still rendered underneath, so the
+figures stay reachable as text.
+
+@table
+Argument | Meaning | Default
+---------|---------|--------
+`chart` | `bar`, `line`, `area`, `stacked`, `pie` | absent — table only
+`x` | Header of the label column | first column
+`y` | Comma-separated value columns | every other numeric column
+`title` | Chart title | none
+`unit` | Value unit | none
+@endtable
+
+## Chart types
+
+@table(chart="line", x="Q", y="North, South", title="line")
+Q | North | South
+--|-------|------
+1 | 10    | 12
+2 | 14    | 9
+3 | 18    | 15
+@endtable
+
+`pie` renders as a proportion bar rather than a circle: lengths can be
+compared accurately, angles cannot.
+
+## What charts will not do
+
+@note
+Title: No script, no dependency
+Charts are inline SVG themed by CSS custom properties, so the surrounding page
+owns the colours and the output works offline and in print.
+@endnote
+
+@note
+Title: Three series, then folding
+The palette is capped at three slots because that is what validates for
+colour-vision-deficient and normal-vision separation on both light and dark
+grounds. Further series fold into "Other" with a warning rather than inventing
+hues that cannot be told apart.
+@endnote
+
+@note
+Title: A cell that is not a number charts as zero
+It also records a warning naming the cell. A true gap would need every SVG
+builder to understand absent points, which is not implemented yet.
+@endnote
+
+## Interactivity
+
+Charts are static by default. `xtxt export html --interactive` inlines a small
+script that lets a reader hover for a value and hide a series. It cannot change
+the chart type — that is the author's choice, made with `chart=`.
+
+Without the flag, exported HTML contains no script at all, which is what makes
+it safe to embed in someone else's page.

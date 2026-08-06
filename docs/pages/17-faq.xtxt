@@ -1,0 +1,94 @@
+@metadata
+title = FAQ
+summary = Common questions, and honest answers to the sceptical ones.
+@endmetadata
+
+# FAQ
+
+## Why not just use Markdown?
+
+For prose, do. Markdown is better supported everywhere and always will be.
+
+Reach for XTXT when a program has to read the document. Markdown has no unit of
+structure to ask for, so extracting a task or a decision means parsing English
+and being wrong sometimes.
+
+## Why not YAML frontmatter?
+
+Frontmatter describes the *file*. It cannot describe a claim in the middle of
+it. A document with twelve decisions in it has twelve things worth extracting,
+each belonging next to the paragraph that explains it.
+
+## Isn't a record just YAML with extra steps?
+
+Today, partly — and the honest answer is that this is the strongest objection
+to the format. Fields have no declared types, so a record is structure-shaped
+text rather than validated structure.
+
+What it buys over YAML is position: the record sits inline with the prose it
+describes, and both survive in one readable, diffable file. What it lacks is
+schemas. Both halves of that are true.
+
+## Why not CommonMark with a custom block?
+
+The best argument against XTXT existing at all. A fenced block in Markdown
+would inherit nested lists, GitHub rendering, every editor and every static
+site generator on day one.
+
+The counter-argument is determinism. CommonMark's spec is precise, but the
+Markdown ecosystem is a dialect swamp, and "the same bytes parse the same way
+everywhere" cannot be promised on a substrate where they demonstrably do not.
+If determinism is the product, the substrate has to be yours.
+
+Whether that is worth the adoption cost is a fair thing to disagree about.
+
+## Does it render on GitHub?
+
+No. `.xtxt` files show as plain text. That is a real cost for anything living
+in a repository, and it does not change until there is enough usage to justify
+a Linguist entry.
+
+## How stable is the format?
+
+The specification is 1.0. Unknown directives are warnings rather than errors,
+which means new names can be added without breaking existing readers — that
+guarantee is the point, and it will not be given up.
+
+## What happens to a document a reader does not understand?
+
+It renders. An unknown directive produces a warning, its source is preserved,
+and it is shown rather than dropped. A reader built today stays useful on a
+document written next year.
+
+## Can I invent my own directive?
+
+Yes, with no registration and no parser change. `@invoice`, `@experiment`,
+`@recipe` all work — the format guarantees the shape is preserved and reported,
+and what the fields mean is your application's business.
+
+## Is it fast?
+
+Parsing is a single pass with no backtracking and no grammar generator, so it
+should be. There is no published benchmark yet, so treat "fast" as a design
+intention rather than a measured result.
+
+## Why seven implementations?
+
+Honestly, more than the project needs at its current size — each one is a
+maintenance cost paid for a user who has not arrived. The upside is that the
+conformance suite is exercised across very different languages, which catches
+specification ambiguity that one implementation would hide.
+
+## How do I convert what I already have?
+
+@code(language="shell")
+xtxt import notes.md -o notes.xtxt
+@endcode
+
+Headings, emphasis, lists, links, tables and code fences all map across.
+
+## Where do I report a problem?
+
+The repository's issue tracker. A conformance fixture that reproduces it is the
+most useful possible bug report — it turns a disagreement into a test every
+implementation has to pass.

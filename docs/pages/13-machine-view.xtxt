@@ -1,0 +1,114 @@
+@metadata
+title = The machine view
+summary = extract, ast, and using XTXT with agents and retrieval.
+@endmetadata
+
+# The machine view
+
+The reason to choose this format over Markdown is what a program gets from it.
+
+## extract
+
+@code(language="shell")
+xtxt extract notes.xtxt
+@endcode
+
+@code(language="json")
+{
+  "version": "1.0",
+  "metadata": {"title": "Project Log"},
+  "outline": [{"level": 1, "text": "Project Log", "line": 1}],
+  "tasks": [{"title": "Ship the parser", "status": "In Progress",
+             "owner": "Subbu", "done": false, "line": 5}],
+  "blocks": [{"type": "decision", "line": 12,
+              "fields": {"title": "…", "why": "…"},
+              "order": ["Title", "Why"]}],
+  "links": [{"text": "spec", "href": "SPEC.md", "line": 20}],
+  "media": [{"kind": "image", "src": "cnn.png", "caption": "…", "line": 8}],
+  "code":  [{"language": "go", "lines": 4, "line": 30}],
+  "text": "…",
+  "words": 412
+}
+@endcode
+
+@table
+Key | Contains
+----|---------
+`outline` | Every heading with its level
+`tasks` | `@task` blocks *and* `- [ ]` checklist items
+`blocks` | Every record, with fields and their source order
+`links` `media` `code` | Everything referenced, with line numbers
+`text` | The prose with markup stripped
+@endtable
+
+## Everything carries a line
+
+Every entry has the line it came from. A program that acts on extracted data
+can always point back at the source that produced it — which means a citation
+can be checked rather than trusted.
+
+## ast
+
+@code(language="shell")
+xtxt ast notes.xtxt
+@endcode
+
+The parse tree itself: kind, name, level, text, args, items and line for each
+node. This is what the conformance suite pins, so every implementation returns
+the same shape for the same bytes.
+
+Use `extract` when you want meaning. Use `ast` when you are writing a tool.
+
+## Why this suits retrieval
+
+Chunking is the hardest part of building a retrieval system, and Markdown gives
+no help: there is no defined unit, so pipelines split on token counts and cut
+tables in half.
+
+XTXT block boundaries are unambiguous. A `@task`, a `@table`, a `@code` block —
+each is a complete thought with a known start and end, and a heading path from
+`outline` that says where it sits.
+
+@note
+Title: Honest status
+There is no `xtxt chunk` command yet. The boundaries and the heading path are
+available today through `ast` and `extract`, so a chunker is a short program —
+but the format does not yet specify one, which means two pipelines can still
+disagree. This is the most valuable thing the project could add.
+@endnote
+
+## Agent memory
+
+`@chat`, `@ai` and `@prompt` exist so a conversation can be stored as a
+document rather than a JSON blob:
+
+@code(language="text")
+@chat
+User: What is a CNN?
+Assistant: A convolutional neural network shares weights across positions.
+@endchat
+@endcode
+
+The advantage over a transcript file is that a human can read it, diff it, and
+review it in a pull request — while a program still gets the structure.
+
+## From a program
+
+@code(language="javascript")
+import { parse, extract } from 'xtxt-js';
+
+const { doc } = parse(source);
+const data = extract(doc);
+for (const task of data.tasks) {
+  if (!task.done) console.log(task.title, task.owner, `line ${task.line}`);
+}
+@endcode
+
+## MCP
+
+@code(language="shell")
+npx xtxt-mcp
+@endcode
+
+Exposes reading, validating and writing XTXT documents as tools a model can
+call directly.

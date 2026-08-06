@@ -1,0 +1,103 @@
+@metadata
+title = Text and formatting
+summary = Headings, paragraphs, quotes, lists, checklists and inline marks.
+@endmetadata
+
+# Text and formatting
+
+The prose layer is deliberately small. Everything structural is a directive.
+
+## Headings
+
+@code(language="text")
+# Title
+## Section
+### Subsection
+@endcode
+
+One to six `#` characters followed by a space. A renderer gives each heading an
+anchor derived from its text, so sections can be linked directly — the contents
+list on this page is built from them.
+
+## Paragraphs
+
+Consecutive lines separated by a blank line. A single newline inside a
+paragraph is a soft wrap, not a break, so you can wrap your source at whatever
+column you like without changing the output.
+
+@code(language="text")
+This sentence and the one after it
+are the same paragraph.
+
+This is a new one.
+@endcode
+
+## Quotes
+
+@code(language="text")
+> Something worth quoting.
+@endcode
+
+## Lists
+
+@code(language="text")
+- one
+- two
+* also a bullet
+
+1. first
+2. second
+@endcode
+
+@note
+Title: Lists do not nest
+Indenting an item deeper than the first does not create a sublist. XTXT reports
+a warning there rather than flattening it silently, so a formatting mistake
+cannot quietly destroy your structure. This is the format's biggest limitation
+and is covered on the Limitations page.
+@endnote
+
+## Checklists
+
+An unordered item whose text begins with `[ ]` or `[x]`:
+
+@code(language="text")
+- [ ] not done yet
+- [x] done
+@endcode
+
+These are picked up by `xtxt extract` as tasks alongside `@task` blocks, so a
+casual checklist and a formal record both reach a program.
+
+## Inline marks
+
+@table
+Write | Get
+------|----
+`*emphasis*` | *emphasis*
+`**strong**` | **strong**
+`` `code` `` | `code`
+`~~strike~~` | ~~strike~~
+`[text](url)` | a link
+@endtable
+
+## Escaping
+
+A backslash makes the next character literal:
+
+@code(language="text")
+\*not emphasis\*
+@endcode
+
+## Footnotes
+
+@code(language="text")
+Parsing is a single pass[^why].
+
+@footnote(id="why")
+Nothing nests, so no backtracking is needed.
+@endfootnote
+@endcode
+
+A reference to an id with no footnote, and a footnote nothing references, are
+both warnings.

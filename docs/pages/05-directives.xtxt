@@ -1,0 +1,107 @@
+@metadata
+title = Directives
+summary = The one rule everything non-textual follows, and how extensibility works.
+@endmetadata
+
+# Directives
+
+Every non-textual thing in XTXT uses one syntax. Learn it once and the whole
+format follows.
+
+## Two forms
+
+@raw
+@name(arg="value")          inline — one item
+
+@name(arg="value")          fenced — a block with a payload
+payload lines
+@endname
+@endraw
+
+## Arguments
+
+`key=value` pairs, comma separated. Values are quoted strings, bare words or
+numbers.
+
+@code(language="text")
+@image(src="chart.png", alt="Signups by month", width=600)
+@endcode
+
+The first positional argument maps to the directive's main attribute, so these
+mean the same thing:
+
+@code(language="text")
+@image("photo.png")
+@image(src="photo.png")
+@endcode
+
+An unclosed argument list is an error. Unknown arguments are ignored, never an
+error — that is what lets a directive gain an attribute without breaking older
+readers.
+
+## Telling the two forms apart
+
+A directive is fenced if a matching `@endname` appears later in the document.
+Otherwise it is inline. That scan is unbounded by specification: a reader must
+search to the end of the file rather than giving up after some number of lines,
+because two readers with different limits would disagree about the same bytes.
+
+Some directives are fenced by convention regardless — `code`, `table`, `math`,
+`mermaid`, `metadata`, `comment` and `raw`. For those, a missing `@endname` is
+an error rather than a silent reinterpretation.
+
+## The standard set
+
+@table
+Directive | Form | Main argument
+----------|------|--------------
+`image` `video` `audio` `attachment` | inline | `src`
+`include` `embed` | inline | `src`
+`hr` | inline | —
+`code` | fenced | `language`
+`table` | fenced | —
+`chart` | fenced | `type`
+`math` `mermaid` | fenced | —
+`metadata` `comment` | fenced | —
+`raw` | fenced | `format`
+`footnote` | fenced | `id`
+`task` `decision` `knowledge` `note` `ai` `prompt` `chat` | fenced | record
+@endtable
+
+## Inventing your own
+
+Nothing is reserved. A new directive needs no registration:
+
+@code(language="text")
+@youtube(id="abc123")
+
+@experiment
+Hypothesis: attention improves recall
+Result: confirmed on 3 of 4 datasets
+@endexperiment
+@endcode
+
+A reader that does not know the name reports a warning, preserves the source,
+and shows it rather than dropping it. A reader that does know it renders it.
+Both are conformant.
+
+This is the format's compatibility guarantee, and it is why a document written
+next year still opens in a reader built today.
+
+## Raw passthrough
+
+`@raw` hands its payload to the renderer untouched when the format matches:
+
+@code(language="text")
+@raw(format="html")
+<details><summary>More</summary>Hidden detail.</details>
+@endraw
+@endcode
+
+@note
+Title: Raw HTML is unsanitised by design
+A host that renders XTXT from an untrusted source must apply a content security
+policy or sanitise the output. The VS Code preview does this with a per-render
+nonce. Without `format="html"` the payload renders as preformatted text and is
+safe.
+@endnote

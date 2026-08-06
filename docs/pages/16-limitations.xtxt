@@ -1,0 +1,88 @@
+@metadata
+title = Limitations
+summary = What XTXT cannot do, why, and what to use instead.
+@endmetadata
+
+# Limitations
+
+Being direct about this is the point. A format that claims every use case is
+trusted with none of them.
+
+## Nothing nests
+
+This is the big one.
+
+@note
+Title: No nested lists
+Indenting an item deeper than the first does not create a sublist. XTXT reports
+a warning rather than flattening silently, but the structure is still not
+expressible.
+@endnote
+
+@note
+Title: No blocks inside blocks
+An admonition containing a code sample cannot be written. The inner block's
+`@endname` closes the outer one.
+@endnote
+
+The examples on the directives and code pages of this very site use `@raw` as a
+workaround, because a `@code` block demonstrating `@code` closes itself early.
+The format cannot document itself without that trick, which is the clearest
+evidence of the cost.
+
+**Why it is this way.** Every construct is terminated by a line and nothing
+nests, so a parser needs a single pass, no backtracking, and no grammar
+generator. That is what makes the specification implementable in an afternoon
+and seven implementations agree.
+
+**What to use instead.** For books and long-form documentation where nesting is
+unavoidable, AsciiDoc is the better tool today.
+
+## Records have no schema
+
+A record's field names are preserved and reported, but nothing declares that
+`Status` is an enum, that `Due` is a date, or that `Owner` refers to a person.
+
+Two authors can produce two vocabularies that do not line up, and a program
+reading both has to reconcile them. This is the most requested missing feature.
+
+## Charts
+
+- Three series maximum before folding into "Other", because the palette is
+  capped at what validates for colour-vision-deficient separation.
+- A cell that is not a number charts as zero with a warning, rather than as a
+  gap. Real gaps would need every SVG builder to understand absent points.
+- A reader cannot change the chart type. That is the author's choice, made with
+  `chart=`; changing it in the browser would need a third chart renderer beside
+  the Go and JavaScript ones.
+
+## Not in the format at all
+
+XTXT does not specify compression, encryption, embedded revision history, or a
+binary container. Each would trade away the property the format exists for —
+that the bytes on disk are the document, readable in any editor.
+
+These belong in a layer above: a file inside an encrypted volume, a signature
+alongside it, history in the version control system that already does it well.
+
+## Ecosystem gaps
+
+@table
+Missing | Impact
+--------|-------
+Tree-sitter grammar | No Neovim, Helix, Zed or GitHub highlighting
+Language server | No completion, no go-to-definition on includes and footnotes
+Formatter | No canonical form, so style is a matter of opinion
+GitHub rendering | `.xtxt` shows as plain text in a repository
+Chunking specification | Two retrieval pipelines can still disagree
+@endtable
+
+## Deliberate non-goals
+
+@table
+Not doing | Why
+----------|----
+A visual editor | The bytes on disk are the document; a WYSIWYG layer contradicts the pitch
+A package manager | There are no packages and no dependency problem to solve
+Inference in the parser | The value is determinism; a parser that calls a model forfeits it
+@endtable

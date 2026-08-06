@@ -1,0 +1,74 @@
+@metadata
+title = Installation
+summary = Install the command line tool, the editor extension, or a library.
+@endmetadata
+
+# Installation
+
+Pick whichever fits how you work. Nothing here has a runtime dependency.
+
+## Command line
+
+The fastest way to see what the format does.
+
+@code(language="shell")
+go install github.com/SaiMouli3/xtxt/cmd/xtxt@latest
+@endcode
+
+Go installs binaries into `$(go env GOPATH)/bin`. If `xtxt` is not found
+afterwards, that directory is not on your `PATH`:
+
+@code(language="shell")
+export PATH="$PATH:$(go env GOPATH)/bin"     # add to ~/.zshrc or ~/.bashrc
+@endcode
+
+Check it:
+
+@code(language="shell")
+xtxt --help
+@endcode
+
+## Editor
+
+The VS Code extension is published as **XTXT**. Search it in the Extensions
+panel, or:
+
+@code(language="shell")
+code --install-extension xtxt.xtxt
+@endcode
+
+It gives you highlighting, a live preview, problems as you type, an outline,
+folding, image paste and a chart builder. See the editors page for the detail.
+
+For Obsidian, the plugin lives in the repository under `integrations/obsidian`.
+
+## Libraries
+
+@table
+Language | Install
+---------|--------
+Go | `go get github.com/SaiMouli3/xtxt`
+JavaScript | `npm install xtxt-js`
+Python | `pip install xtxt`
+Rust | `cargo add xtxt`
+Java | `io.github.saimouli3:xtxt` — built from source for now
+C | `cd sdk/c && make`
+C++ | `cd sdk/cpp && cmake -S . -B build && cmake --build build`
+@endtable
+
+## For an agent
+
+An MCP server lets a model read and write XTXT documents directly:
+
+@code(language="shell")
+npx xtxt-mcp
+@endcode
+
+## From source
+
+@code(language="shell")
+git clone https://github.com/SaiMouli3/xtxt
+cd xtxt
+go test ./...
+go run ./cmd/xtxt --help
+@endcode

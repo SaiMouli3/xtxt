@@ -1,0 +1,67 @@
+@metadata
+title = Code, maths and diagrams
+summary = Source listings with highlighting, formulas, and Mermaid diagrams.
+@endmetadata
+
+# Code, maths and diagrams
+
+## Code
+
+@raw
+@code(language="python", filename="train.py")
+def train(model, data):
+    return model.fit(data)
+@endcode
+@endraw
+
+@table
+Argument | Meaning
+---------|--------
+`language` | Used for syntax highlighting, and by editors to highlight the block inline
+`filename` | Shown as a label
+`caption` | Shown beneath
+@endtable
+
+A `@code` block with no `language` is a warning: highlighting cannot be applied
+and a reader cannot tell what it is looking at.
+
+The payload is taken literally. Nothing inside is parsed as XTXT, so a code
+sample can contain `@` characters freely.
+
+@note
+Title: One exception, and it matters
+Because blocks do not nest, a `@code` block cannot contain `@endcode` — the
+first one closes it. Documenting XTXT in XTXT runs into this immediately; the
+examples on this page use `@raw` for exactly that reason. See Limitations.
+@endnote
+
+## Maths
+
+@code(language="text")
+@math(caption="Mass–energy equivalence")
+E = mc^2
+@endmath
+@endcode
+
+The payload is passed through untouched. XTXT does not specify a maths syntax —
+a renderer is free to hand it to KaTeX, MathJax or nothing at all.
+
+## Diagrams
+
+@code(language="text")
+@mermaid(caption="Parse pipeline")
+graph LR
+  A[source] --> B[parse] --> C[AST] --> D[render]
+@endmermaid
+@endcode
+
+Rendered as a `<pre class="mermaid">` block. Diagrams only draw when the page
+loads Mermaid, which is opt-in:
+
+@code(language="shell")
+xtxt export notes.xtxt html --mermaid
+@endcode
+
+Off by default so exported output stays self-contained and works offline. With
+the flag, the loader comes from a CDN — which means the page needs a network to
+draw its diagrams. That trade is yours to make per export.

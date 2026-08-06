@@ -1,0 +1,77 @@
+@metadata
+title = Images and media
+summary = Images, video, audio and attachments, referenced or embedded.
+@endmetadata
+
+# Images and media
+
+## Images
+
+@code(language="text")
+@image(src="diagram.png", alt="How the parser works", caption="Single pass", width=600)
+@endcode
+
+@table
+Argument | Meaning
+---------|--------
+`src` | Path relative to the document, or a `data:` URI
+`alt` | Text alternative — write one
+`caption` | Shown beneath the image
+`width` `height` | Rendered size in pixels
+@endtable
+
+If `alt` is absent a renderer falls back to `caption`, and reports a warning
+when neither exists. An `@image` with no `src` is a warning too.
+
+## Video and audio
+
+@code(language="text")
+@video(src="demo.mp4", poster="thumb.png", caption="Ninety seconds")
+@audio(src="interview.mp3", caption="Field recording")
+@endcode
+
+## Attachments
+
+For a file meant to be downloaded rather than played:
+
+@code(language="text")
+@attachment(src="report.pdf", name="Q3 Report")
+@endcode
+
+## Referenced or embedded
+
+A source can be a path, or the bytes themselves as a `data:` URI:
+
+@code(language="text")
+@image(src="chart.png")
+@image(src="data:image/png;base64,iVBORw0KGgo...")
+@endcode
+
+@table
+Approach | Good | Bad
+---------|------|----
+Referenced | Small file, readable diffs | The image must travel with the document
+Embedded | One self-contained file | About 33% larger, and it makes diffs unreadable
+@endtable
+
+Referenced is the default everywhere for that reason.
+
+## Pasting an image
+
+Rather than writing the directive by hand, paste it.
+
+In VS Code, `Cmd+V` with an image on the clipboard writes the file beside the
+document and inserts the directive. `Cmd+Alt+V` forces it when the platform
+does not hand the image to the editor.
+
+From the command line:
+
+@code(language="shell")
+xtxt paste notes.xtxt                          # save beside the document
+xtxt paste notes.xtxt --embed                  # inline as a data: URI
+xtxt paste notes.xtxt --caption "Whiteboard"   # with a caption
+@endcode
+
+Two settings control the editor's behaviour: `xtxt.paste.embed` to inline
+rather than save, and `xtxt.paste.folder` to choose a subfolder. A folder that
+resolves outside the workspace is refused.

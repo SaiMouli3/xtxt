@@ -1,0 +1,141 @@
+@metadata
+title = Libraries
+summary = Using XTXT from Go, JavaScript, Python, Rust, Java, C and C++.
+@endmetadata
+
+# Libraries
+
+Seven implementations, all checked against the same conformance fixtures, none
+with a runtime dependency.
+
+@table
+Language | Package | Parse | Validate | Render
+---------|---------|-------|----------|-------
+Go | `github.com/SaiMouli3/xtxt` | yes | yes | yes
+JavaScript | `xtxt-js` | yes | yes | yes
+Python | `xtxt` | yes | yes | no
+Rust | `xtxt` | yes | yes | no
+Java | `io.github.saimouli3:xtxt` | yes | yes | no
+C | `sdk/c` | yes | yes | no
+C++ | `sdk/cpp` | yes | yes | no
+@endtable
+
+Rendering to HTML exists in Go and JavaScript. The others parse, validate and
+extract — which is what a pipeline usually needs.
+
+## Go
+
+@code(language="go")
+package main
+
+import (
+    "fmt"
+    xtxt "github.com/SaiMouli3/xtxt"
+)
+
+func main() {
+    res := xtxt.ParseString(source)
+    for _, i := range res.Issues {
+        fmt.Printf("%d: %s: %s\n", i.Line, i.Severity, i.Message)
+    }
+
+    data := xtxt.Extract(res.Doc)
+    for _, t := range data.Tasks {
+        fmt.Println(t.Title, t.Status, t.Line)
+    }
+
+    html := xtxt.RenderHTML(res.Doc, xtxt.HTMLOptions{Full: true})
+    fmt.Println(html)
+}
+@endcode
+
+## JavaScript
+
+@code(language="javascript")
+import { parse, validate, extract, renderHTML } from 'xtxt-js';
+
+const res = parse(source);
+const issues = [...res.issues, ...validate(res.doc)];
+const data = extract(res.doc);
+const html = renderHTML(res.doc, { full: true });
+@endcode
+
+Ships TypeScript declarations. Works in the browser with no build step —
+the playground on this site imports the published module directly.
+
+## Python
+
+@code(language="python")
+import xtxt
+
+res = xtxt.parse(source)
+for issue in res.issues:
+    print(issue.line, issue.severity, issue.message)
+
+data = xtxt.extract(res.doc)
+for task in data.tasks:
+    print(task.title, task.owner)
+@endcode
+
+## Rust
+
+@code(language="rust")
+use xtxt::{parse, extract};
+
+let res = parse(&source);
+for issue in &res.issues {
+    println!("{}: {:?}: {}", issue.line, issue.severity, issue.message);
+}
+
+let data = extract(&res.doc);
+for task in &data.tasks {
+    println!("{} {}", task.title, task.line);
+}
+@endcode
+
+## Java
+
+@code(language="java")
+import io.github.saimouli3.xtxt.Xtxt;
+
+var res = Xtxt.parse(source);
+res.issues.forEach(i -> System.out.println(i.line + ": " + i.message));
+@endcode
+
+## C
+
+@code(language="c")
+#include "xtxt.h"
+
+xtxt_result *res = xtxt_parse(source);
+for (size_t i = 0; i < res->issues.count; i++) {
+    printf("%zu: %s\n", res->issues.items[i].line, res->issues.items[i].message);
+}
+xtxt_result_free(res);
+@endcode
+
+C++ wraps the C parser rather than reimplementing it — there is only one tree
+to be right about.
+
+## Conformance
+
+Every implementation reads the same fixtures in `conformance/cases` and must
+produce the same normalised AST and the same diagnostics.
+
+Diagnostic **messages** are excluded on purpose. Implementations must agree
+that a given line is an error or a warning, not on how to word the complaint.
+
+@code(language="shell")
+go test ./...                        # Go, and regenerates the fixtures
+cd sdk/python && python -m pytest
+cd sdk/js     && node --test
+cd sdk/rust   && cargo test
+cd sdk/java   && mvn test
+cd sdk/c      && make test
+@endcode
+
+## Writing a new implementation
+
+Read every `.xtxt` file in `conformance/cases`, produce the two JSON structures
+beside it, and compare. The specification is 460 lines and the format has no
+nesting, so a single pass with no backtracking is enough.

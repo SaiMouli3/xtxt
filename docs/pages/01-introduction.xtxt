@@ -1,0 +1,85 @@
+@metadata
+title = Introduction
+summary = What XTXT is, who it is for, and when to reach for something else.
+@endmetadata
+
+# Introduction
+
+XTXT is a plain-text document format that carries structure a machine can read
+without guessing, and still opens in any text editor and diffs cleanly in git.
+
+## The problem it solves
+
+Markdown makes a program infer structure from prose. If a document says a task
+is in progress, the only way to know is to read the sentence and hope. There is
+no unit of meaning to ask for.
+
+XTXT lets the document carry it:
+
+@code(language="text")
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+Due: 2026-08-15
+@endtask
+@endcode
+
+That block is not a comment or a naming convention. The parser returns it, and
+`xtxt extract` hands it to a program as JSON, with the line it came from.
+
+## One rule for everything else
+
+Everything that is not prose uses a single syntax: `@name(args)` for a single
+item, `@name … @endname` for a block. That is the whole format. Images, tables,
+charts, code, records and anything a later version adds all share it.
+
+Adding a name never breaks an older reader: an unknown directive is a warning,
+never an error, and its source is preserved rather than dropped.
+
+## Who it is for
+
+@table
+You are | XTXT is
+--------|--------
+Building an agent that reads and writes structured notes | A good fit — this is what it is for
+Keeping decisions, tasks or requirements a team can query | A good fit
+Indexing documents for retrieval | A good fit — block boundaries are unambiguous
+Writing a blog or a book | Use Markdown or AsciiDoc; see below
+Producing API docs from source | Your generator already emits Markdown
+@endtable
+
+## When not to use it
+
+Being direct about this saves you time.
+
+@note
+Title: Prose-heavy publishing
+Lists do not nest and blocks do not contain blocks, so an admonition holding a
+code sample is not expressible. For books and long-form documentation,
+AsciiDoc is the better tool today.
+@endnote
+
+@note
+Title: Anything that must render on GitHub
+GitHub shows .xtxt as plain text. If the document lives in a repository and
+people read it there, that matters more than any feature.
+@endnote
+
+## What a document looks like
+
+@code(language="text")
+# Project Log
+
+Neural networks are inspired by the brain, loosely.
+
+@image(src="cnn.png", caption="CNN architecture", width=600)
+
+@decision
+Title: Unknown directives are warnings, never errors
+Why: A reader from today must stay useful on a document written tomorrow.
+@enddecision
+@endcode
+
+Read on for installation, or jump to the quick start to have something running
+in two minutes.

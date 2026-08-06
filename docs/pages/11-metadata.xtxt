@@ -1,0 +1,65 @@
+@metadata
+title = Metadata and comments
+summary = Document properties, notes to yourself, and how escaping works.
+@endmetadata
+
+# Metadata and comments
+
+## Metadata
+
+@code(language="text")
+@metadata
+title = Project Log
+author = Subbu
+date = 2026-08-06
+tags = parser, format
+@endmetadata
+@endcode
+
+One `key = value` per line. Keys are case-insensitive and trimmed. A document
+may contain at most one metadata block; a second is a warning.
+
+Readers surface it as document properties rather than rendering it inline, so
+it never appears in the body. `xtxt export html` uses `title` for the page
+title, falling back to the first heading.
+
+It is returned by `xtxt extract` under `metadata`.
+
+@note
+Title: Not frontmatter
+There is no special syntax at the top of the file. Metadata is an ordinary
+directive that happens to be conventionally placed first, which means it
+follows the same rules as everything else and needs no separate parser.
+@endnote
+
+## Comments
+
+@code(language="text")
+@comment
+Reminder: check these numbers against the Q3 export before publishing.
+@endcomment
+@endcode
+
+Never rendered, in any output format. The payload is taken literally, so it can
+contain anything.
+
+In VS Code, the block-comment shortcut wraps a selection in `@comment`.
+
+## Escaping
+
+A backslash makes the next character literal:
+
+@code(language="text")
+\*not emphasis\*
+\[not a link\](x)
+@endcode
+
+Escaping is only needed where a mark would otherwise be read as syntax. Inside
+`@code`, `@math`, `@mermaid`, `@raw` and `@comment`, nothing is interpreted and
+no escaping is required.
+
+## Horizontal rule
+
+@code(language="text")
+@hr
+@endcode

@@ -34,9 +34,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-      - name: Render the documentation
+      - name: Build the documentation site
         run: |
-          go run ./cmd/xtxt validate docs/guide.xtxt
+          cp assets/docs.css _site/
+          go run ./tools/docsite docs/pages _site/docs
+          # The old single-page guide keeps working for anyone who linked it.
           go run ./cmd/xtxt export docs/guide.xtxt html --full --interactive -o _site/guide.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -1,0 +1,100 @@
+@metadata
+title = Quick start
+summary = Write a document, validate it, render it, and read it as JSON.
+@endmetadata
+
+# Quick start
+
+Two minutes, four commands.
+
+## Write a document
+
+Create `notes.xtxt`:
+
+@code(language="text")
+# Project Log
+
+Neural networks are inspired by the brain, loosely.
+
+@task
+Title: Ship the reference parser
+Status: In Progress
+Owner: Subbu
+@endtask
+
+@table(chart="bar", x="Month", y="Signups")
+Month | Signups
+------|--------
+Jan   | 20
+Feb   | 35
+Mar   | 50
+@endtable
+@endcode
+
+## Check it
+
+@code(language="shell")
+xtxt validate notes.xtxt
+@endcode
+
+@code(language="text")
+notes.xtxt: ok (4 blocks)
+@endcode
+
+Errors mean the file cannot be interpreted unambiguously. Warnings mean it
+parses but something looks wrong. `validate` exits non-zero only on errors.
+
+## Read it
+
+@code(language="shell")
+xtxt render notes.xtxt
+@endcode
+
+Renders to the terminal, wrapped and coloured. Add `-w 100` to change the wrap
+column, `--no-color` to drop the ANSI codes.
+
+## Export it
+
+@code(language="shell")
+xtxt export notes.xtxt html -o notes.html
+@endcode
+
+The chart becomes inline SVG with no script and no dependency. Add
+`--interactive` if you want a reader to hover for values and hide a series.
+
+## The part that matters
+
+@code(language="shell")
+xtxt extract notes.xtxt
+@endcode
+
+@code(language="json")
+{
+  "outline": [{"level": 1, "text": "Project Log", "line": 1}],
+  "tasks": [{
+    "title": "Ship the reference parser",
+    "status": "In Progress",
+    "owner": "Subbu",
+    "done": false,
+    "line": 5
+  }],
+  "blocks": [],
+  "media": [], "links": [], "code": [],
+  "words": 12
+}
+@endcode
+
+No prose was parsed to produce that. The task was declared, so it is returned —
+with the line it came from, so anything a program does with it can be traced
+back to the source.
+
+## Next
+
+@table
+If you want to | Read
+---------------|-----
+Learn the writing syntax | Text and formatting
+Understand the one rule everything follows | Directives
+Store data a program can query | Records
+Use it from a program | Libraries
+@endtable
