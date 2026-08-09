@@ -20,8 +20,9 @@ C | `sdk/c` | yes | yes | no
 C++ | `sdk/cpp` | yes | yes | no
 @endtable
 
-Rendering to HTML exists in Go and JavaScript. The others parse, validate and
-extract — which is what a pipeline usually needs.
+Six of the seven render HTML; only C is parse-only. All six produce
+byte-identical output for the same document, which the build checks rather
+than assumes.
 
 ## Go
 

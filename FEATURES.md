@@ -45,7 +45,7 @@ print("hello")
 | Directive | Purpose |
 |---|---|
 | `@image` `@video` `@audio` `@attachment` | Media, referenced or embedded as `data:` URIs |
-| `@code` | Fenced source, with a language for highlighting |
+| `@code` | Fenced source, syntax-highlighted at render time with no script in the page |
 | `@table` | Pipe-separated rows, with alignment |
 | `@chart` | Bar, line, area, stacked and proportion charts |
 | `@math` | Formulas |
@@ -151,15 +151,15 @@ type, an outline covering headings *and* records, folding, image paste with
 
 ## Libraries
 
-| Language | Package | Parses | Renders |
+| Language | Package | Parses | Renders HTML |
 |---|---|---|---|
 | Go | `github.com/SaiMouli3/xtxt` | yes | yes |
 | JavaScript | `xtxt-js` | yes | yes |
-| Python | `xtxt` | yes | — |
-| Rust | `xtxt` | yes | — |
-| Java | `io.github.saimouli3:xtxt` | yes | — |
+| Python | `xtxt` | yes | yes |
+| Rust | `xtxt` | yes | yes |
+| Java | `io.github.saimouli3:xtxt` | yes | yes |
+| C++ | `sdk/cpp` | yes | yes |
 | C | `sdk/c` | yes | — |
-| C++ | `sdk/cpp` | yes | — |
 
 Every implementation is checked against the same conformance fixtures, which
 pin the parse tree and the severity of every diagnostic. Zero runtime

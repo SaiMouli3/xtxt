@@ -1405,7 +1405,7 @@ public final class Xtxt {
       case "code": {
         String lang = n.args.resolve("language");
         String cls = lang.isEmpty() ? "" : " class=\"language-" + escape(lang) + "\"";
-        return "<pre><code" + cls + ">" + escape(n.text) + "</code></pre>";
+        return "<pre><code" + cls + ">" + highlightHtml(n.text, lang) + "</code></pre>";
       }
       case "math":
         return "<div class=\"math\">" + escape(n.text) + "</div>";
@@ -1480,4 +1480,151 @@ public final class Xtxt {
     if (n.kind == Kind.BLOCK) out.append('\n').append(n.text).append("\n@end").append(n.name);
     return out.toString();
   }
+
+  // --- syntax highlighting --------------------------------------------------
+  //
+  // Byte-identical to highlight.go and the other implementations. One generic
+  // tokeniser parameterised per language: comments, strings, numbers, keywords.
+
+  private static Set<String> kw(String... w) {
+    return new HashSet<>(Arrays.asList(w));
+  }
+
+  private static final class LangSpec {
+    final String[] line; final String blockOpen, blockClose, quotes; final Set<String> keywords;
+    LangSpec(String[] line, String o, String c, String q, Set<String> k) {
+      this.line = line; this.blockOpen = o; this.blockClose = c; this.quotes = q; this.keywords = k;
+    }
+  }
+
+  private static final Map<String, LangSpec> LANGUAGES = new HashMap<>();
+  private static final Map<String, String> LANG_ALIASES = new HashMap<>();
+  static {
+    LANGUAGES.put("go", new LangSpec(new String[]{"//"}, "/*", "*/", "\"'`", kw(
+      "break","case","chan","const","continue","default","defer","else","fallthrough",
+      "for","func","go","goto","if","import","interface","map","package","range",
+      "return","select","struct","switch","type","var","nil","true","false")));
+    LANGUAGES.put("javascript", new LangSpec(new String[]{"//"}, "/*", "*/", "\"'`", kw(
+      "async","await","break","case","catch","class","const","continue","default",
+      "delete","do","else","export","extends","finally","for","from","function","if",
+      "import","in","instanceof","let","new","of","return","super","switch","this",
+      "throw","try","typeof","var","void","while","yield","null","true","false")));
+    LANGUAGES.put("python", new LangSpec(new String[]{"#"}, "", "", "\"'", kw(
+      "and","as","assert","async","await","break","class","continue","def","del","elif",
+      "else","except","finally","for","from","global","if","import","in","is","lambda",
+      "None","nonlocal","not","or","pass","raise","return","try","while","with","yield",
+      "True","False")));
+    LANGUAGES.put("rust", new LangSpec(new String[]{"//"}, "/*", "*/", "\"'", kw(
+      "as","async","await","break","const","continue","crate","dyn","else","enum",
+      "extern","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub",
+      "ref","return","self","static","struct","trait","type","unsafe","use","where",
+      "while","true","false")));
+    LANGUAGES.put("c", new LangSpec(new String[]{"//"}, "/*", "*/", "\"'", kw(
+      "auto","break","case","char","const","continue","default","do","double","else",
+      "enum","extern","float","for","goto","if","int","long","return","short","signed",
+      "sizeof","static","struct","switch","typedef","union","unsigned","void","volatile",
+      "while")));
+    LANGUAGES.put("java", new LangSpec(new String[]{"//"}, "/*", "*/", "\"'", kw(
+      "abstract","boolean","break","case","catch","class","const","continue","default",
+      "do","double","else","enum","extends","final","finally","float","for","if",
+      "implements","import","instanceof","int","interface","long","new","package",
+      "private","protected","public","return","static","super","switch","this","throw",
+      "throws","try","void","while","null","true","false")));
+    LANGUAGES.put("shell", new LangSpec(new String[]{"#"}, "", "", "\"'", kw(
+      "case","do","done","elif","else","esac","export","fi","for","function","if","in",
+      "local","return","then","while")));
+    LANGUAGES.put("sql", new LangSpec(new String[]{"--"}, "/*", "*/", "'\"", kw(
+      "AND","AS","BY","CREATE","DELETE","DROP","FROM","GROUP","HAVING","INSERT","INTO",
+      "JOIN","LEFT","LIMIT","NOT","NULL","ON","OR","ORDER","SELECT","SET","TABLE",
+      "UPDATE","VALUES","WHERE")));
+    LANGUAGES.put("json", new LangSpec(new String[]{}, "", "", "\"", kw("true","false","null")));
+    LANGUAGES.put("yaml", new LangSpec(new String[]{"#"}, "", "", "\"'", kw("true","false","null")));
+
+    LANG_ALIASES.put("js","javascript"); LANG_ALIASES.put("jsx","javascript");
+    LANG_ALIASES.put("ts","javascript"); LANG_ALIASES.put("typescript","javascript");
+    LANG_ALIASES.put("tsx","javascript"); LANG_ALIASES.put("mjs","javascript");
+    LANG_ALIASES.put("py","python"); LANG_ALIASES.put("rs","rust");
+    LANG_ALIASES.put("sh","shell"); LANG_ALIASES.put("bash","shell");
+    LANG_ALIASES.put("zsh","shell"); LANG_ALIASES.put("cpp","c");
+    LANG_ALIASES.put("c++","c"); LANG_ALIASES.put("h","c"); LANG_ALIASES.put("hpp","c");
+    LANG_ALIASES.put("cc","c"); LANG_ALIASES.put("yml","yaml");
+    LANG_ALIASES.put("golang","go");
+  }
+
+  private static boolean hlWord(char c) {
+    return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+  }
+
+  private static int stringEnd(String s, int start) {
+    char quote = s.charAt(start);
+    for (int i = start + 1; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '\\') i++;
+      else if (c == '\n' && quote != '`') return i;
+      else if (c == quote) return i + 1;
+    }
+    return s.length();
+  }
+
+  /** Escaped HTML with token spans; an unknown language is escaped and left plain. */
+  public static String highlightHtml(String source, String language) {
+    String name = language == null ? "" : language.trim().toLowerCase();
+    if (LANG_ALIASES.containsKey(name)) name = LANG_ALIASES.get(name);
+    LangSpec spec = LANGUAGES.get(name);
+    if (spec == null) return escape(source);
+
+    StringBuilder out = new StringBuilder();
+    int plain = 0, i = 0;
+    while (i < source.length()) {
+      String marker = null;
+      for (String m : spec.line) if (!m.isEmpty() && source.startsWith(m, i)) { marker = m; break; }
+      if (marker != null) {
+        int end = source.indexOf('\n', i); if (end < 0) end = source.length();
+        if (i > plain) out.append(escape(source.substring(plain, i)));
+        out.append("<span class=\"tok-com\">").append(escape(source.substring(i, end))).append("</span>");
+        i = plain = end; continue;
+      }
+      if (!spec.blockOpen.isEmpty() && source.startsWith(spec.blockOpen, i)) {
+        int at = source.indexOf(spec.blockClose, i + spec.blockOpen.length());
+        int end = at < 0 ? source.length() : at + spec.blockClose.length();
+        if (i > plain) out.append(escape(source.substring(plain, i)));
+        out.append("<span class=\"tok-com\">").append(escape(source.substring(i, end))).append("</span>");
+        i = plain = end; continue;
+      }
+      if (spec.quotes.indexOf(source.charAt(i)) >= 0) {
+        int end = stringEnd(source, i);
+        if (i > plain) out.append(escape(source.substring(plain, i)));
+        out.append("<span class=\"tok-str\">").append(escape(source.substring(i, end))).append("</span>");
+        i = plain = end; continue;
+      }
+      char c = source.charAt(i);
+      if (c >= '0' && c <= '9' && (i == 0 || !hlWord(source.charAt(i - 1)))) {
+        int end = i;
+        while (end < source.length()) {
+          char d = source.charAt(end);
+          if ((d >= '0' && d <= '9') || d == '.' || d == 'x'
+              || (d >= 'a' && d <= 'f') || (d >= 'A' && d <= 'F')) end++;
+          else break;
+        }
+        if (i > plain) out.append(escape(source.substring(plain, i)));
+        out.append("<span class=\"tok-num\">").append(escape(source.substring(i, end))).append("</span>");
+        i = plain = end; continue;
+      }
+      if (hlWord(c) && (i == 0 || !hlWord(source.charAt(i - 1)))) {
+        int end = i;
+        while (end < source.length() && hlWord(source.charAt(end))) end++;
+        if (spec.keywords.contains(source.substring(i, end))) {
+          if (i > plain) out.append(escape(source.substring(plain, i)));
+          out.append("<span class=\"tok-kw\">").append(escape(source.substring(i, end))).append("</span>");
+          plain = end;
+        }
+        i = end; continue;
+      }
+      i++;
+    }
+    if (source.length() > plain) out.append(escape(source.substring(plain)));
+    return out.toString();
+  }
+
+
 }

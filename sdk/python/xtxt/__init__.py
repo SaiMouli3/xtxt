@@ -955,6 +955,145 @@ def canonical_issues(issues: Iterable[Issue]) -> list[dict[str, Any]]:
 # --------------------------------------------------------------------------
 
 
+# --- syntax highlighting -----------------------------------------------------
+#
+# Byte-identical to highlight.go, highlight.js and the C++ header. One generic
+# tokeniser parameterised per language: comments, strings, numbers, keywords.
+# An unknown language is escaped and returned unchanged.
+
+_LANGUAGES: dict[str, dict] = {
+    "go": {"line": ["//"], "block": ("/*", "*/"), "quotes": "\"'`", "kw": {
+        "break","case","chan","const","continue","default","defer","else",
+        "fallthrough","for","func","go","goto","if","import","interface","map",
+        "package","range","return","select","struct","switch","type","var","nil",
+        "true","false"}},
+    "javascript": {"line": ["//"], "block": ("/*", "*/"), "quotes": "\"'`", "kw": {
+        "async","await","break","case","catch","class","const","continue","default",
+        "delete","do","else","export","extends","finally","for","from","function",
+        "if","import","in","instanceof","let","new","of","return","super","switch",
+        "this","throw","try","typeof","var","void","while","yield","null","true",
+        "false"}},
+    "python": {"line": ["#"], "block": ("", ""), "quotes": "\"'", "kw": {
+        "and","as","assert","async","await","break","class","continue","def","del",
+        "elif","else","except","finally","for","from","global","if","import","in",
+        "is","lambda","None","nonlocal","not","or","pass","raise","return","try",
+        "while","with","yield","True","False"}},
+    "rust": {"line": ["//"], "block": ("/*", "*/"), "quotes": "\"'", "kw": {
+        "as","async","await","break","const","continue","crate","dyn","else","enum",
+        "extern","fn","for","if","impl","in","let","loop","match","mod","move","mut",
+        "pub","ref","return","self","static","struct","trait","type","unsafe","use",
+        "where","while","true","false"}},
+    "c": {"line": ["//"], "block": ("/*", "*/"), "quotes": "\"'", "kw": {
+        "auto","break","case","char","const","continue","default","do","double",
+        "else","enum","extern","float","for","goto","if","int","long","return",
+        "short","signed","sizeof","static","struct","switch","typedef","union",
+        "unsigned","void","volatile","while"}},
+    "java": {"line": ["//"], "block": ("/*", "*/"), "quotes": "\"'", "kw": {
+        "abstract","boolean","break","case","catch","class","const","continue",
+        "default","do","double","else","enum","extends","final","finally","float",
+        "for","if","implements","import","instanceof","int","interface","long","new",
+        "package","private","protected","public","return","static","super","switch",
+        "this","throw","throws","try","void","while","null","true","false"}},
+    "shell": {"line": ["#"], "block": ("", ""), "quotes": "\"'", "kw": {
+        "case","do","done","elif","else","esac","export","fi","for","function","if",
+        "in","local","return","then","while"}},
+    "sql": {"line": ["--"], "block": ("/*", "*/"), "quotes": "'\"", "kw": {
+        "AND","AS","BY","CREATE","DELETE","DROP","FROM","GROUP","HAVING","INSERT",
+        "INTO","JOIN","LEFT","LIMIT","NOT","NULL","ON","OR","ORDER","SELECT","SET",
+        "TABLE","UPDATE","VALUES","WHERE"}},
+    "json": {"line": [], "block": ("", ""), "quotes": "\"", "kw": {"true","false","null"}},
+    "yaml": {"line": ["#"], "block": ("", ""), "quotes": "\"'", "kw": {"true","false","null"}},
+}
+
+_LANG_ALIASES = {
+    "js": "javascript", "jsx": "javascript", "ts": "javascript",
+    "typescript": "javascript", "tsx": "javascript", "mjs": "javascript",
+    "py": "python", "rs": "rust", "sh": "shell", "bash": "shell", "zsh": "shell",
+    "cpp": "c", "c++": "c", "h": "c", "hpp": "c", "cc": "c",
+    "yml": "yaml", "golang": "go",
+}
+
+
+def _esc(s: str) -> str:
+    """Matches Go's html.EscapeString, which also escapes the apostrophe."""
+    return (s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+             .replace('"', "&#34;").replace("'", "&#39;"))
+
+
+def _is_word(c: str) -> bool:
+    return c == "_" or c.isascii() and (c.isalpha() or c.isdigit())
+
+
+def _string_end(s: str, start: int) -> int:
+    quote = s[start]
+    i = start + 1
+    while i < len(s):
+        if s[i] == "\\":
+            i += 1
+        elif s[i] == "\n" and quote != "`":
+            return i
+        elif s[i] == quote:
+            return i + 1
+        i += 1
+    return len(s)
+
+
+def highlight_html(source: str, language: str) -> str:
+    """Escaped HTML with span classes around comments, strings, numbers and
+    keywords. An unrecognised language is escaped and left plain."""
+    name = (language or "").strip().lower()
+    name = _LANG_ALIASES.get(name, name)
+    spec = _LANGUAGES.get(name)
+    if spec is None:
+        return _esc(source)
+
+    out: list[str] = []
+    plain = 0
+
+    def flush(upto: int) -> None:
+        if upto > plain:
+            out.append(_esc(source[plain:upto]))
+
+    def span(cls: str, text: str) -> None:
+        out.append(f'<span class="tok-{cls}">{_esc(text)}</span>')
+
+    i = 0
+    while i < len(source):
+        marker = next((m for m in spec["line"] if m and source.startswith(m, i)), None)
+        if marker:
+            end = source.find("\n", i)
+            end = len(source) if end < 0 else end
+            flush(i); span("com", source[i:end]); i = plain = end
+            continue
+        if spec["block"][0] and source.startswith(spec["block"][0], i):
+            at = source.find(spec["block"][1], i + len(spec["block"][0]))
+            end = len(source) if at < 0 else at + len(spec["block"][1])
+            flush(i); span("com", source[i:end]); i = plain = end
+            continue
+        if source[i] in spec["quotes"]:
+            end = _string_end(source, i)
+            flush(i); span("str", source[i:end]); i = plain = end
+            continue
+        if source[i].isdigit() and (i == 0 or not _is_word(source[i - 1])):
+            end = i
+            while end < len(source) and (source[end].isdigit() or source[end] in ".x"
+                                         or source[end] in "abcdefABCDEF"):
+                end += 1
+            flush(i); span("num", source[i:end]); i = plain = end
+            continue
+        if _is_word(source[i]) and (i == 0 or not _is_word(source[i - 1])):
+            end = i
+            while end < len(source) and _is_word(source[end]):
+                end += 1
+            if source[i:end] in spec["kw"]:
+                flush(i); span("kw", source[i:end]); plain = end
+            i = end
+            continue
+        i += 1
+    flush(len(source))
+    return "".join(out)
+
+
 def render_html(doc: Document, full: bool = False, title: str = "") -> str:
     """Render to HTML. `full` wraps the result in a standalone document."""
     body: list[str] = []
@@ -1033,7 +1172,7 @@ def _directive_html(n: Node) -> str:
     if n.name == "code":
         lang = n.args.resolve("language")
         cls = f' class="language-{esc(lang)}"' if lang else ""
-        return f"<pre><code{cls}>{_html.escape(n.text, quote=False)}</code></pre>"
+        return f"<pre><code{cls}>{highlight_html(n.text, lang)}</code></pre>"
     if n.name == "math":
         return f'<div class="math">{_html.escape(n.text, quote=False)}</div>'
     if n.name == "mermaid":

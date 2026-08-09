@@ -213,6 +213,12 @@ Readers MUST accept all of these. Unknown attributes are ignored, not errors.
 | `prompt` | fenced | — | record (§5.4) |
 | `chat` | fenced | — | record (§5.4) |
 
+A renderer that highlights `@code` SHOULD do so while rendering rather than by
+loading a script into the output, so that a rendered document stays
+self-contained. Highlighting is presentational: it MUST NOT change the text a
+reader copies, and a language the renderer does not know MUST be rendered as
+plain escaped text rather than guessed at.
+
 ### 5.1 `table` payload
 
 Rows are non-blank lines; cells are separated by `|`. Blank lines between rows
