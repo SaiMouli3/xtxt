@@ -17,3 +17,10 @@ sdk/c/build/
 sdk/cpp/build/
 editors/vscode/out/
 editors/vscode/*.vsix
+
+# Research working files. These live on a local branch and must never reach the
+# public remote: the ignore rule has to be on main too, because a rule that only
+# exists on a side branch does not apply once you switch back.
+benchmark/
+research/
+*.vsix
