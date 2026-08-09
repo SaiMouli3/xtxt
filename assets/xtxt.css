@@ -67,3 +67,20 @@ figure.chart { margin:2em 0; text-align:left; }
   cursor:pointer; padding:.15em .6em; border-radius:999px; color:inherit;
   background:transparent; border:1px solid var(--rule); }
 .xtxt-chart-toggle[aria-pressed="false"] { opacity:.45; text-decoration:line-through; }
+
+/* Syntax highlighting for @code. Four token classes, applied at render time so
+   the page needs no script. Colours are chosen to stay legible against both
+   surfaces and to degrade to plain text when styling is unavailable. */
+.tok-com { color:#6a737d; font-style:italic; }
+.tok-str { color:#0a7d55; }
+.tok-num { color:#9a5b00; }
+.tok-kw  { color:#8250c8; font-weight:600; }
+@media (prefers-color-scheme: dark) {
+  .tok-com { color:#8b949e; }
+  .tok-str { color:#5fd7a5; }
+  .tok-num { color:#e0a458; }
+  .tok-kw  { color:#c9a8ff; }
+}
+@media (forced-colors: active) {
+  .tok-com, .tok-str, .tok-num, .tok-kw { color:CanvasText; forced-color-adjust:none; }
+}

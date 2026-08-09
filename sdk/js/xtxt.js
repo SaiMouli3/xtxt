@@ -9,7 +9,9 @@
  */
 
 import { renderChart, renderTableChart } from './chart.js';
+import { highlightHTML } from './highlight.js';
 
+export { highlightHTML } from './highlight.js';
 export { parseChart, renderChart, renderChartSVG, chartTableHTML,
   tableChart, chartData, renderTableChart } from './chart.js';
 
@@ -896,7 +898,9 @@ function directiveHTML(n) {
     }
     case 'code': {
       const lang = n.args.resolve('language');
-      return `<pre><code${lang ? ` class="language-${e(lang)}"` : ''}>${e(n.text)}</code></pre>`;
+      // Highlighted at render time rather than by a script in the page.
+      return `<pre><code${lang ? ` class="language-${e(lang)}"` : ''}>`
+        + `${highlightHTML(n.text, lang)}</code></pre>`;
     }
     case 'math': return `<div class="math">${e(n.text)}</div>`;
     case 'mermaid': return `<pre class="mermaid">${e(n.text)}</pre>`;

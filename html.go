@@ -230,7 +230,9 @@ func renderDirectiveHTML(n Node) string {
 		if lang != "" {
 			cls = fmt.Sprintf(` class="language-%s"`, esc(lang))
 		}
-		return fmt.Sprintf("<pre><code%s>%s</code></pre>\n", cls, esc(n.Text))
+		// Highlighted at render time rather than by a script in the page, so
+		// the output stays self-contained and readable offline.
+		return fmt.Sprintf("<pre><code%s>%s</code></pre>\n", cls, HighlightHTML(n.Text, lang))
 	case "math":
 		return fmt.Sprintf("<div class=\"math\">%s</div>\n", esc(n.Text))
 	case "mermaid":

@@ -551,6 +551,10 @@ main { --chart-1: #2a78d6; --chart-2: #eb6834; --chart-3: #1baf7a;
                      background: var(--vscode-editor-background);
                      border: 1px solid var(--vscode-panel-border); }
 .xtxt-chart-toggle[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.tok-com { color: var(--vscode-editorLineNumber-foreground); font-style: italic; }
+.tok-str { color: var(--vscode-debugTokenExpression-string, #0a7d55); }
+.tok-num { color: var(--vscode-debugTokenExpression-number, #9a5b00); }
+.tok-kw  { color: var(--vscode-symbolIcon-keywordForeground, #8250c8); font-weight: 600; }
 `;
 
 // ---------------------------------------------------------------------------

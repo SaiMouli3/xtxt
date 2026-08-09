@@ -25,6 +25,12 @@ Argument | Meaning
 A `@code` block with no `language` is a warning: highlighting cannot be applied
 and a reader cannot tell what it is looking at.
 
+Highlighting happens when the document is rendered, not by a script in the
+page, so exported HTML stays self-contained and works offline. Comments,
+strings, numbers and keywords are wrapped in `tok-` classes that the
+surrounding stylesheet colours; a language the renderer does not know is
+escaped and left plain rather than guessed at.
+
 The payload is taken literally. Nothing inside is parsed as XTXT, so a code
 sample can contain `@` characters freely.
 

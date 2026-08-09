@@ -1,0 +1,68 @@
+Engineering notes, 4 August 2026
+
+We found a bad one in the parser today. Nested lists were being flattened without any warning at all. If you indented a list item under another one, the indentation was just dropped on the floor and you got three siblings instead of a hierarchy. No error, no warning, nothing in the output to tell you your document had been changed.
+
+Subbu decided we should treat this as data loss rather than a missing feature, because silently changing what someone wrote is worse than refusing to handle it. The fix landed the same day: an item indented deeper than the first item in its list now produces a warning. A list that is uniformly indented stays quiet, since that is a style choice rather than an attempt to nest.
+
+This had to go into all seven implementations, because a warning that only one parser emits is not part of the format. Go, JavaScript, Python, Rust, Java, C and C++ were all updated and a conformance fixture was added so it cannot regress.
+
+While we were in there we also closed a specification hole. Section 9 used to let a streaming parser give up looking for a closing fence after some unspecified number of lines. Two parsers picking different limits would produce different trees from identical bytes, which is exactly the problem the format exists to avoid. Nobody had ever implemented the shortcut, so requiring an unbounded scan cost nothing.
+
+Still open: records have no schemas, so nothing declares that Status is an enum or that Due is a date. That is the next thing worth doing.
+
+@task
+Title: Fix parser to handle nested lists correctly
+Status: Done
+Owner: Subbu
+@endtask
+
+@decision
+Title: Treat silent changes as data loss
+Reasoning: Silently changing what someone wrote is worse than refusing to handle it.
+@enddecision
+
+@knowledge
+Title: Nested lists were being flattened without warning
+@endknowledge
+
+@knowledge
+Title: A warning is now produced for items indented deeper than the first item in a list
+@endknowledge
+
+@knowledge
+Title: A list that is uniformly indented does not produce a warning
+@endknowledge
+
+@knowledge
+Title: All seven implementations were updated to include the warning
+@endknowledge
+
+@knowledge
+Title: Implementations include Go, JavaScript, Python, Rust, Java, C, and C++
+@endknowledge
+
+@knowledge
+Title: A conformance fixture was added to prevent regression
+@endknowledge
+
+@knowledge
+Title: Section 9 allowed a streaming parser to give up looking for a closing fence after an unspecified number of lines
+@endknowledge
+
+@knowledge
+Title: Different limits in parsers could produce different trees from identical bytes
+@endknowledge
+
+@knowledge
+Title: Nobody had ever implemented the shortcut in Section 9
+@endknowledge
+
+@knowledge
+Title: Records have no schemas, and nothing declares that Status is an enum or that Due is a date
+@endknowledge
+
+@task
+Title: Define schemas for records
+Status: Open
+Owner: ...
+@endtask

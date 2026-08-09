@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <set>
 #include <memory>
 #include <optional>
 #include <string>
@@ -278,6 +279,7 @@ struct FieldsGuard {
   FieldsGuard(const FieldsGuard&) = delete;
   FieldsGuard& operator=(const FieldsGuard&) = delete;
 };
+
 
 }  // namespace detail
 
@@ -672,6 +674,134 @@ inline std::string escape(std::string_view s) {
   return out;
 }
 
+/// Syntax highlighting for @code, byte-identical to highlight.go and
+/// highlight.js. One generic tokeniser parameterised per language: comments,
+/// strings, numbers, keywords. An unknown language is escaped and returned.
+struct LangSpec {
+  std::vector<std::string> line;
+  std::string block_open, block_close;
+  std::string quotes;
+  std::set<std::string> keywords;
+};
+
+inline const std::map<std::string, LangSpec>& languages() {
+  static const std::map<std::string, LangSpec> m = {
+    {"go", {{"//"}, "/*", "*/", "\"'`", {"break","case","chan","const","continue",
+      "default","defer","else","fallthrough","for","func","go","goto","if","import",
+      "interface","map","package","range","return","select","struct","switch","type",
+      "var","nil","true","false"}}},
+    {"javascript", {{"//"}, "/*", "*/", "\"'`", {"async","await","break","case","catch",
+      "class","const","continue","default","delete","do","else","export","extends",
+      "finally","for","from","function","if","import","in","instanceof","let","new","of",
+      "return","super","switch","this","throw","try","typeof","var","void","while",
+      "yield","null","true","false"}}},
+    {"python", {{"#"}, "", "", "\"'", {"and","as","assert","async","await","break",
+      "class","continue","def","del","elif","else","except","finally","for","from",
+      "global","if","import","in","is","lambda","None","nonlocal","not","or","pass",
+      "raise","return","try","while","with","yield","True","False"}}},
+    {"rust", {{"//"}, "/*", "*/", "\"'", {"as","async","await","break","const",
+      "continue","crate","dyn","else","enum","extern","fn","for","if","impl","in","let",
+      "loop","match","mod","move","mut","pub","ref","return","self","static","struct",
+      "trait","type","unsafe","use","where","while","true","false"}}},
+    {"c", {{"//"}, "/*", "*/", "\"'", {"auto","break","case","char","const","continue",
+      "default","do","double","else","enum","extern","float","for","goto","if","int",
+      "long","return","short","signed","sizeof","static","struct","switch","typedef",
+      "union","unsigned","void","volatile","while"}}},
+    {"java", {{"//"}, "/*", "*/", "\"'", {"abstract","boolean","break","case","catch",
+      "class","const","continue","default","do","double","else","enum","extends","final",
+      "finally","float","for","if","implements","import","instanceof","int","interface",
+      "long","new","package","private","protected","public","return","static","super",
+      "switch","this","throw","throws","try","void","while","null","true","false"}}},
+    {"shell", {{"#"}, "", "", "\"'", {"case","do","done","elif","else","esac","export",
+      "fi","for","function","if","in","local","return","then","while"}}},
+    {"sql", {{"--"}, "/*", "*/", "'\"", {"AND","AS","BY","CREATE","DELETE","DROP","FROM",
+      "GROUP","HAVING","INSERT","INTO","JOIN","LEFT","LIMIT","NOT","NULL","ON","OR",
+      "ORDER","SELECT","SET","TABLE","UPDATE","VALUES","WHERE"}}},
+    {"json", {{}, "", "", "\"", {"true","false","null"}}},
+    {"yaml", {{"#"}, "", "", "\"'", {"true","false","null"}}},
+  };
+  return m;
+}
+
+inline const std::map<std::string, std::string>& lang_aliases() {
+  static const std::map<std::string, std::string> m = {
+    {"js","javascript"},{"jsx","javascript"},{"ts","javascript"},
+    {"typescript","javascript"},{"tsx","javascript"},{"mjs","javascript"},
+    {"py","python"},{"rs","rust"},{"sh","shell"},{"bash","shell"},{"zsh","shell"},
+    {"cpp","c"},{"c++","c"},{"h","c"},{"hpp","c"},{"cc","c"},
+    {"yml","yaml"},{"golang","go"},
+  };
+  return m;
+}
+
+inline bool hl_digit(char c){ return c>='0'&&c<='9'; }
+inline bool hl_hex(char c){ return (c>='a'&&c<='f')||(c>='A'&&c<='F'); }
+inline bool hl_word(char c){ return c=='_'||(c>='a'&&c<='z')||(c>='A'&&c<='Z')||hl_digit(c); }
+
+inline size_t hl_string_end(const std::string& s, size_t start) {
+  char quote = s[start];
+  for (size_t i = start + 1; i < s.size(); i++) {
+    if (s[i] == '\\') i++;
+    else if (s[i] == '\n' && quote != '`') return i;
+    else if (s[i] == quote) return i + 1;
+  }
+  return s.size();
+}
+
+inline std::string highlight_html(const std::string& src, const std::string& language) {
+  std::string name;
+  for (char c : language) name += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  while (!name.empty() && std::isspace(static_cast<unsigned char>(name.front()))) name.erase(name.begin());
+  while (!name.empty() && std::isspace(static_cast<unsigned char>(name.back()))) name.pop_back();
+  auto alias = lang_aliases().find(name);
+  if (alias != lang_aliases().end()) name = alias->second;
+  auto it = languages().find(name);
+  if (it == languages().end()) return escape(src);
+  const LangSpec& spec = it->second;
+
+  std::string out;
+  size_t plain = 0;
+  auto flush = [&](size_t upto){ if (upto > plain) out += escape(src.substr(plain, upto - plain)); };
+  auto span = [&](const char* cls, const std::string& t){
+    out += std::string("<span class=\"tok-") + cls + "\">" + escape(t) + "</span>"; };
+
+  size_t i = 0;
+  while (i < src.size()) {
+    bool matched = false;
+    for (const auto& m : spec.line) {
+      if (!m.empty() && src.compare(i, m.size(), m) == 0) {
+        size_t end = src.find('\n', i);
+        if (end == std::string::npos) end = src.size();
+        flush(i); span("com", src.substr(i, end - i)); i = plain = end; matched = true; break;
+      }
+    }
+    if (matched) continue;
+    if (!spec.block_open.empty() && src.compare(i, spec.block_open.size(), spec.block_open) == 0) {
+      size_t at = src.find(spec.block_close, i + spec.block_open.size());
+      size_t end = (at == std::string::npos) ? src.size() : at + spec.block_close.size();
+      flush(i); span("com", src.substr(i, end - i)); i = plain = end; continue;
+    }
+    if (spec.quotes.find(src[i]) != std::string::npos) {
+      size_t end = hl_string_end(src, i);
+      flush(i); span("str", src.substr(i, end - i)); i = plain = end; continue;
+    }
+    if (hl_digit(src[i]) && (i == 0 || !hl_word(src[i-1]))) {
+      size_t end = i;
+      while (end < src.size() && (hl_digit(src[end]) || src[end]=='.' || src[end]=='x' || hl_hex(src[end]))) end++;
+      flush(i); span("num", src.substr(i, end - i)); i = plain = end; continue;
+    }
+    if (hl_word(src[i]) && (i == 0 || !hl_word(src[i-1]))) {
+      size_t end = i;
+      while (end < src.size() && hl_word(src[end])) end++;
+      if (spec.keywords.count(src.substr(i, end - i))) { flush(i); span("kw", src.substr(i, end - i)); plain = end; }
+      i = end; continue;
+    }
+    i++;
+  }
+  flush(src.size());
+  return out;
+}
+
 /// Turn heading text into an anchor. Kept byte-identical to the Go and
 /// JavaScript renderers: a link written against one renderer's output must not
 /// break under another.
@@ -776,7 +906,7 @@ inline std::string render_html(const Document& doc) {
         if (n.name == "code") {
           auto lang = n.resolve("language");
           std::string cls = lang.empty() ? "" : " class=\"language-" + detail::escape(lang) + "\"";
-          body.push_back("<pre><code" + cls + ">" + detail::escape(n.text) + "</code></pre>");
+          body.push_back("<pre><code" + cls + ">" + detail::highlight_html(n.text, lang) + "</code></pre>");
           break;
         }
         if (n.name == "math") {
