@@ -961,45 +961,201 @@ fn lang_spec(name: &str) -> Option<LangSpec> {
         other => other,
     };
     Some(match name {
-        "go" => LangSpec { line: &["//"], block: ("/*", "*/"), quotes: "\"'`", keywords: &[
-            "break","case","chan","const","continue","default","defer","else","fallthrough",
-            "for","func","go","goto","if","import","interface","map","package","range",
-            "return","select","struct","switch","type","var","nil","true","false"] },
-        "javascript" => LangSpec { line: &["//"], block: ("/*", "*/"), quotes: "\"'`", keywords: &[
-            "async","await","break","case","catch","class","const","continue","default",
-            "delete","do","else","export","extends","finally","for","from","function","if",
-            "import","in","instanceof","let","new","of","return","super","switch","this",
-            "throw","try","typeof","var","void","while","yield","null","true","false"] },
-        "python" => LangSpec { line: &["#"], block: ("", ""), quotes: "\"'", keywords: &[
-            "and","as","assert","async","await","break","class","continue","def","del","elif",
-            "else","except","finally","for","from","global","if","import","in","is","lambda",
-            "None","nonlocal","not","or","pass","raise","return","try","while","with","yield",
-            "True","False"] },
-        "rust" => LangSpec { line: &["//"], block: ("/*", "*/"), quotes: "\"'", keywords: &[
-            "as","async","await","break","const","continue","crate","dyn","else","enum",
-            "extern","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub",
-            "ref","return","self","static","struct","trait","type","unsafe","use","where",
-            "while","true","false"] },
-        "c" => LangSpec { line: &["//"], block: ("/*", "*/"), quotes: "\"'", keywords: &[
-            "auto","break","case","char","const","continue","default","do","double","else",
-            "enum","extern","float","for","goto","if","int","long","return","short","signed",
-            "sizeof","static","struct","switch","typedef","union","unsigned","void","volatile",
-            "while"] },
-        "java" => LangSpec { line: &["//"], block: ("/*", "*/"), quotes: "\"'", keywords: &[
-            "abstract","boolean","break","case","catch","class","const","continue","default",
-            "do","double","else","enum","extends","final","finally","float","for","if",
-            "implements","import","instanceof","int","interface","long","new","package",
-            "private","protected","public","return","static","super","switch","this","throw",
-            "throws","try","void","while","null","true","false"] },
-        "shell" => LangSpec { line: &["#"], block: ("", ""), quotes: "\"'", keywords: &[
-            "case","do","done","elif","else","esac","export","fi","for","function","if","in",
-            "local","return","then","while"] },
-        "sql" => LangSpec { line: &["--"], block: ("/*", "*/"), quotes: "'\"", keywords: &[
-            "AND","AS","BY","CREATE","DELETE","DROP","FROM","GROUP","HAVING","INSERT","INTO",
-            "JOIN","LEFT","LIMIT","NOT","NULL","ON","OR","ORDER","SELECT","SET","TABLE",
-            "UPDATE","VALUES","WHERE"] },
-        "json" => LangSpec { line: &[], block: ("", ""), quotes: "\"", keywords: &["true","false","null"] },
-        "yaml" => LangSpec { line: &["#"], block: ("", ""), quotes: "\"'", keywords: &["true","false","null"] },
+        "go" => LangSpec {
+            line: &["//"],
+            block: ("/*", "*/"),
+            quotes: "\"'`",
+            keywords: &[
+                "break",
+                "case",
+                "chan",
+                "const",
+                "continue",
+                "default",
+                "defer",
+                "else",
+                "fallthrough",
+                "for",
+                "func",
+                "go",
+                "goto",
+                "if",
+                "import",
+                "interface",
+                "map",
+                "package",
+                "range",
+                "return",
+                "select",
+                "struct",
+                "switch",
+                "type",
+                "var",
+                "nil",
+                "true",
+                "false",
+            ],
+        },
+        "javascript" => LangSpec {
+            line: &["//"],
+            block: ("/*", "*/"),
+            quotes: "\"'`",
+            keywords: &[
+                "async",
+                "await",
+                "break",
+                "case",
+                "catch",
+                "class",
+                "const",
+                "continue",
+                "default",
+                "delete",
+                "do",
+                "else",
+                "export",
+                "extends",
+                "finally",
+                "for",
+                "from",
+                "function",
+                "if",
+                "import",
+                "in",
+                "instanceof",
+                "let",
+                "new",
+                "of",
+                "return",
+                "super",
+                "switch",
+                "this",
+                "throw",
+                "try",
+                "typeof",
+                "var",
+                "void",
+                "while",
+                "yield",
+                "null",
+                "true",
+                "false",
+            ],
+        },
+        "python" => LangSpec {
+            line: &["#"],
+            block: ("", ""),
+            quotes: "\"'",
+            keywords: &[
+                "and", "as", "assert", "async", "await", "break", "class", "continue", "def",
+                "del", "elif", "else", "except", "finally", "for", "from", "global", "if",
+                "import", "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise",
+                "return", "try", "while", "with", "yield", "True", "False",
+            ],
+        },
+        "rust" => LangSpec {
+            line: &["//"],
+            block: ("/*", "*/"),
+            quotes: "\"'",
+            keywords: &[
+                "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else",
+                "enum", "extern", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
+                "move", "mut", "pub", "ref", "return", "self", "static", "struct", "trait", "type",
+                "unsafe", "use", "where", "while", "true", "false",
+            ],
+        },
+        "c" => LangSpec {
+            line: &["//"],
+            block: ("/*", "*/"),
+            quotes: "\"'",
+            keywords: &[
+                "auto", "break", "case", "char", "const", "continue", "default", "do", "double",
+                "else", "enum", "extern", "float", "for", "goto", "if", "int", "long", "return",
+                "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "union",
+                "unsigned", "void", "volatile", "while",
+            ],
+        },
+        "java" => LangSpec {
+            line: &["//"],
+            block: ("/*", "*/"),
+            quotes: "\"'",
+            keywords: &[
+                "abstract",
+                "boolean",
+                "break",
+                "case",
+                "catch",
+                "class",
+                "const",
+                "continue",
+                "default",
+                "do",
+                "double",
+                "else",
+                "enum",
+                "extends",
+                "final",
+                "finally",
+                "float",
+                "for",
+                "if",
+                "implements",
+                "import",
+                "instanceof",
+                "int",
+                "interface",
+                "long",
+                "new",
+                "package",
+                "private",
+                "protected",
+                "public",
+                "return",
+                "static",
+                "super",
+                "switch",
+                "this",
+                "throw",
+                "throws",
+                "try",
+                "void",
+                "while",
+                "null",
+                "true",
+                "false",
+            ],
+        },
+        "shell" => LangSpec {
+            line: &["#"],
+            block: ("", ""),
+            quotes: "\"'",
+            keywords: &[
+                "case", "do", "done", "elif", "else", "esac", "export", "fi", "for", "function",
+                "if", "in", "local", "return", "then", "while",
+            ],
+        },
+        "sql" => LangSpec {
+            line: &["--"],
+            block: ("/*", "*/"),
+            quotes: "'\"",
+            keywords: &[
+                "AND", "AS", "BY", "CREATE", "DELETE", "DROP", "FROM", "GROUP", "HAVING", "INSERT",
+                "INTO", "JOIN", "LEFT", "LIMIT", "NOT", "NULL", "ON", "OR", "ORDER", "SELECT",
+                "SET", "TABLE", "UPDATE", "VALUES", "WHERE",
+            ],
+        },
+        "json" => LangSpec {
+            line: &[],
+            block: ("", ""),
+            quotes: "\"",
+            keywords: &["true", "false", "null"],
+        },
+        "yaml" => LangSpec {
+            line: &["#"],
+            block: ("", ""),
+            quotes: "\"'",
+            keywords: &["true", "false", "null"],
+        },
         _ => return None,
     })
 }
@@ -1050,7 +1206,11 @@ pub fn highlight_html(source: &str, language: &str) -> String {
     }
 
     while i < b.len() {
-        if let Some(m) = spec.line.iter().find(|m| !m.is_empty() && source[i..].starts_with(**m)) {
+        if let Some(m) = spec
+            .line
+            .iter()
+            .find(|m| !m.is_empty() && source[i..].starts_with(**m))
+        {
             let _ = m;
             let end = source[i..].find('\n').map(|k| i + k).unwrap_or(b.len());
             flush!(i);
@@ -1082,7 +1242,9 @@ pub fn highlight_html(source: &str, language: &str) -> String {
         if b[i].is_ascii_digit() && (i == 0 || !hl_word(b[i - 1])) {
             let mut end = i;
             while end < b.len()
-                && (b[end].is_ascii_digit() || b[end] == b'.' || b[end] == b'x'
+                && (b[end].is_ascii_digit()
+                    || b[end] == b'.'
+                    || b[end] == b'x'
                     || b[end].is_ascii_hexdigit())
             {
                 end += 1;
@@ -1851,7 +2013,10 @@ fn directive_html(n: &Node) -> String {
             } else {
                 format!(" class=\"language-{}\"", escape_str(lang))
             };
-            format!("<pre><code{class}>{}</code></pre>", highlight_html(&n.text, lang))
+            format!(
+                "<pre><code{class}>{}</code></pre>",
+                highlight_html(&n.text, lang)
+            )
         }
         "math" => format!("<div class=\"math\">{}</div>", escape_str(&n.text)),
         "mermaid" => format!("<pre class=\"mermaid\">{}</pre>", escape_str(&n.text)),
