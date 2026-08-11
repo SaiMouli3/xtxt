@@ -100,8 +100,8 @@
         },
         "xtxt.paste.folder": {
           "type": "string",
-          "default": "",
-          "description": "Folder for pasted images, relative to the document. Empty means beside the document."
+          "default": "assets",
+          "description": "Folder for pasted images, relative to the document. A folder of notes accumulates screenshots quickly, so pasted media goes into 'assets' by default rather than beside the document. Set to an empty string to write them beside it."
         }
       }
     }

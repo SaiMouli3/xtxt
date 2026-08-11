@@ -161,10 +161,19 @@ type pasteOptions struct {
 	Alt     string
 	// Width, if set, is passed through to the directive.
 	Width string
-	// Dir overrides where a saved image is written; defaults to the
-	// document's own directory.
-	Dir string
+	// Folder is where a saved image is written, relative to the document.
+	// Empty means beside the document, which is what "" from --folder
+	// requests explicitly; unset means defaultPasteFolder.
+	Folder string
+	// FolderSet distinguishes "--folder ''" from "--folder never given".
+	FolderSet bool
 }
+
+// defaultPasteFolder keeps pasted media out of the document's own directory.
+// A folder of notes accumulates screenshots quickly, and a directory holding
+// three documents and forty PNGs is unreadable; the media belongs together and
+// out of the way. Pass --folder "" to opt out and write beside the document.
+const defaultPasteFolder = "assets"
 
 // pasteImage appends the clipboard image to doc and returns the directive it
 // wrote. The document is only touched once the image has been written, so a
@@ -178,31 +187,56 @@ func pasteImage(doc string, opt pasteOptions) (string, error) {
 		return "", errNoImage
 	}
 
-	ext := imageExtension(data)
-	var directive string
-
-	if opt.Embed {
-		directive = buildImageDirective(
-			"data:"+mimeForExtension(ext)+";base64,"+base64.StdEncoding.EncodeToString(data), opt)
-	} else {
-		dir := opt.Dir
-		if dir == "" {
-			dir = filepath.Dir(doc)
-		}
-		name, err := uniqueImageName(dir, strings.TrimSuffix(filepath.Base(doc), filepath.Ext(doc)), ext)
-		if err != nil {
-			return "", err
-		}
-		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
-			return "", err
-		}
-		directive = buildImageDirective(name, opt)
+	directive, err := writeImage(doc, data, opt)
+	if err != nil {
+		return "", err
 	}
 
 	if err := appendToDocument(doc, directive); err != nil {
 		return "", err
 	}
 	return directive, nil
+}
+
+// writeImage stores the image and returns the directive that references it,
+// without touching the document. Separated from pasteImage so the placement
+// rules can be tested without a clipboard.
+func writeImage(doc string, data []byte, opt pasteOptions) (string, error) {
+	ext := imageExtension(data)
+
+	if opt.Embed {
+		return buildImageDirective(
+			"data:"+mimeForExtension(ext)+";base64,"+base64.StdEncoding.EncodeToString(data), opt), nil
+	}
+
+	folder := opt.Folder
+	if !opt.FolderSet {
+		folder = defaultPasteFolder
+	}
+	dir := filepath.Dir(doc)
+	if folder != "" {
+		dir = filepath.Join(dir, folder)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return "", err
+		}
+	}
+
+	name, err := uniqueImageName(dir, strings.TrimSuffix(filepath.Base(doc), filepath.Ext(doc)), ext)
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+		return "", err
+	}
+
+	// The directive must point where the file actually went. Always a forward
+	// slash: this is a document reference, not a filesystem path, and it has to
+	// resolve on every platform that opens the file.
+	src := name
+	if folder != "" {
+		src = folder + "/" + name
+	}
+	return buildImageDirective(src, opt), nil
 }
 
 // uniqueImageName finds the first free `<base>-N<ext>` in dir.

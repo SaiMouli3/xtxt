@@ -32,7 +32,7 @@ that — so the preview panel is where you see them, the same way Markdown works
 | Setting | Default | Meaning |
 |---|---|---|
 | `xtxt.paste.embed` | `false` | Embed pasted images as `data:` URIs instead of saving them beside the document. Self-contained, ~33% larger, and it makes git diffs unreadable. |
-| `xtxt.paste.folder` | `""` | Folder for pasted images, relative to the document. Empty means beside it. |
+| `xtxt.paste.folder` | `"assets"` | Folder for pasted images, relative to the document. A notes folder fills with screenshots quickly, so media goes into a subfolder by default. Empty writes them beside the document. |
 
 ## Install from source
 

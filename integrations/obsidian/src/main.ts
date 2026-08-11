@@ -27,7 +27,11 @@ interface XtxtSettings {
    * Self-contained, but roughly 33% larger and it makes diffs unreadable.
    */
   embedPastedImages: boolean;
-  /** Vault folder for pasted images; empty means beside the document. */
+  /**
+   * Folder for pasted images, relative to the document. A notes folder fills
+   * with screenshots quickly, so media goes into a subfolder by default.
+   * Empty writes them beside the document.
+   */
   attachmentFolder: string;
 }
 
@@ -35,7 +39,7 @@ const DEFAULT_SETTINGS: XtxtSettings = {
   defaultMode: 'preview',
   showIssues: true,
   embedPastedImages: false,
-  attachmentFolder: '',
+  attachmentFolder: 'assets',
 };
 
 const IMAGE_EXTENSIONS: Record<string, string> = {
@@ -248,10 +252,13 @@ export default class XtxtPlugin extends Plugin {
     }
 
     const ext = IMAGE_EXTENSIONS[mime] ?? 'png';
-    const folder = this.settings.attachmentFolder.trim();
-    const dir = folder || docDir;
-    if (folder && !this.app.vault.getAbstractFileByPath(normalizePath(folder))) {
-      await this.app.vault.createFolder(normalizePath(folder));
+    // Relative to the document, matching the CLI and the VS Code extension.
+    // A vault-absolute folder would put one project's screenshots beside
+    // another's, and the same setting would mean different things in each tool.
+    const folder = this.settings.attachmentFolder.trim().replace(/^\/+|\/+$/g, '');
+    const dir = folder ? (docDir ? `${docDir}/${folder}` : folder) : docDir;
+    if (folder && !this.app.vault.getAbstractFileByPath(normalizePath(dir))) {
+      await this.app.vault.createFolder(normalizePath(dir));
     }
 
     let name = '';
@@ -265,9 +272,11 @@ export default class XtxtPlugin extends Plugin {
     if (!name) throw new Error('could not find an unused filename');
 
     await this.app.vault.createBinary(name, bytes);
-    // Reference it relative to the document when they share a folder, so the
-    // file stays portable outside the vault.
-    const relative = dir === docDir ? name.split('/').pop()! : name;
+    // Always reference it relative to the document, so the file resolves when
+    // the folder is opened outside the vault by any other XTXT reader.
+    const relative = docDir && name.startsWith(`${docDir}/`)
+      ? name.slice(docDir.length + 1)
+      : name;
     return `@image(src="${relative}")\n`;
   }
 

@@ -127,7 +127,7 @@ xtxt export    file.xtxt html # html, body, md, text, json
 xtxt import    notes.md       # Markdown in
 xtxt ast       file.xtxt      # parse tree as JSON
 xtxt extract   file.xtxt      # machine-facing view as JSON
-xtxt paste     file.xtxt      # append the clipboard image
+xtxt paste     file.xtxt      # append the clipboard image (into assets/)
 ```
 
 Useful flags: `--resolve` expands includes, `--interactive` inlines the chart

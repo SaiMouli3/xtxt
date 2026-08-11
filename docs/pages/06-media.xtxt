@@ -67,11 +67,22 @@ does not hand the image to the editor.
 From the command line:
 
 @code(language="shell")
-xtxt paste notes.xtxt                          # save beside the document
+xtxt paste notes.xtxt                          # into assets/, beside nothing
+xtxt paste notes.xtxt --folder media           # into media/
+xtxt paste notes.xtxt --folder ""              # beside the document
 xtxt paste notes.xtxt --embed                  # inline as a data: URI
 xtxt paste notes.xtxt --caption "Whiteboard"   # with a caption
 @endcode
 
+@note
+Title: Pasted media goes into a subfolder
+A folder of notes fills with screenshots quickly, and a directory holding
+three documents and forty PNGs is hard to read. Pasted images go into `assets`
+beside the document by default, in every tool. Pass an empty folder to write
+them alongside the document instead.
+@endnote
+
 Two settings control the editor's behaviour: `xtxt.paste.embed` to inline
-rather than save, and `xtxt.paste.folder` to choose a subfolder. A folder that
-resolves outside the workspace is refused.
+rather than save, and `xtxt.paste.folder` to choose the subfolder. A folder
+that resolves outside the workspace is refused, including by way of a
+symlink.

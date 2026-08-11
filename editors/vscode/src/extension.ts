@@ -623,7 +623,9 @@ async function storeImage(
   const stem = (basename(document.uri).replace(/\.xtxt$/, '') || 'image');
   const here = vscode.Uri.joinPath(document.uri, '..');
 
-  let folder = config.get<string>('paste.folder', '').trim();
+  // Defaults to 'assets': a notes folder fills with screenshots fast, and a
+  // directory holding three documents and forty PNGs is unreadable.
+  let folder = config.get<string>('paste.folder', 'assets').trim();
   let dir = folder ? vscode.Uri.joinPath(document.uri, '..', folder) : here;
 
   // The setting is window-scoped, so a repository can set it in its own

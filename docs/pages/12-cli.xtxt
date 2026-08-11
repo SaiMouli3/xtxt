@@ -92,12 +92,15 @@ media and code, each with a line number.
 
 @code(language="shell")
 xtxt paste notes.xtxt
+xtxt paste notes.xtxt --folder media
+xtxt paste notes.xtxt --folder ""
 xtxt paste notes.xtxt --embed
 xtxt paste notes.xtxt --caption "Whiteboard" --width 600
 @endcode
 
-Reads an image from the system clipboard, writes it beside the document and
-appends the `@image` directive. Uses whatever the platform provides —
+Reads an image from the system clipboard, writes it into `assets` beside the
+document and appends the `@image` directive. `--folder` chooses a different
+subfolder; an empty one writes beside the document. Uses whatever the platform provides —
 `osascript` on macOS, PowerShell on Windows, `wl-paste` or `xclip` on Linux.
 
 ## Options
@@ -108,6 +111,7 @@ Flag | Effect
 `--resolve` | Expand `@include` and `@embed` first
 `--interactive` | In HTML, inline the chart runtime; without it, output has no script
 `--mermaid` | In HTML, load the diagram renderer from a CDN
+`--folder <path>` | Where `paste` saves an image, relative to the document (default `assets`)
 `--plugins <path>` | Load a plugin manifest for unknown directives
 `-o <path>` | Write to a file instead of stdout
 `-w <n>` | Wrap column for text output, default 80

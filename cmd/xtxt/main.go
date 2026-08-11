@@ -35,6 +35,8 @@ paste options:
   --embed             write the image into the document as a data: URI
   --caption <text>    caption for the pasted image
   --width <n>         width attribute for the pasted image
+  --folder <path>     where to save the image, relative to the document
+                      (default "assets"; pass "" to write beside it)
 
 options:
   --resolve    expand @include and @embed before rendering
@@ -57,7 +59,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	var out, pluginPath, caption, imgWidth string
+	var out, pluginPath, caption, imgWidth, pasteFolder string
+	var pasteFolderSet bool
 	var width = 80
 	var mermaid, noColor, resolve, embed, interactive bool
 	var rest []string
@@ -86,6 +89,13 @@ func main() {
 			if i < len(args) {
 				caption = args[i]
 			}
+		case "--folder":
+			i++
+			if i >= len(args) {
+				die("--folder needs a path")
+			}
+			pasteFolder = args[i]
+			pasteFolderSet = true
 		case "--width":
 			i++
 			if i < len(args) {
@@ -137,6 +147,7 @@ func main() {
 		doc := one(files)
 		directive, err := pasteImage(doc, pasteOptions{
 			Embed: embed, Caption: caption, Width: imgWidth,
+			Folder: pasteFolder, FolderSet: pasteFolderSet,
 		})
 		if err != nil {
 			die(err.Error())

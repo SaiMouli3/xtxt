@@ -156,3 +156,39 @@ func parseDirective(t *testing.T, source string) string {
 	}
 	return res.Doc.Nodes[0].Args.Resolve("src")
 }
+
+// Numbering is per directory, so each folder starts at -1.
+// Pasted media lands in a subfolder by default, and the directive points at it.
+// The two have to agree: writing to one place and referencing another is worse
+// than either choice on its own.
+func TestPasteWritesIntoAFolderAndPointsAtIt(t *testing.T) {
+	dir := t.TempDir()
+	doc := filepath.Join(dir, "notes.xtxt")
+	if err := os.WriteFile(doc, []byte("# Notes\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name     string
+		opt      pasteOptions
+		wantSrc  string
+		wantFile string
+	}{
+		{"default", pasteOptions{}, "assets/notes-1.png", "assets/notes-1.png"},
+		{"explicit", pasteOptions{Folder: "media", FolderSet: true}, "media/notes-1.png", "media/notes-1.png"},
+		{"opt out", pasteOptions{Folder: "", FolderSet: true}, "notes-1.png", "notes-1.png"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			directive, err := writeImage(doc, testPNG, tc.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(directive, `src="`+tc.wantSrc+`"`) {
+				t.Errorf("directive %q does not reference %q", directive, tc.wantSrc)
+			}
+			if _, err := os.Stat(filepath.Join(dir, tc.wantFile)); err != nil {
+				t.Errorf("file not written where the directive points: %v", err)
+			}
+		})
+	}
+}
